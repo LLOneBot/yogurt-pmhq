@@ -87,7 +87,6 @@ object YogurtApp {
                 runBlocking { bot.offline() }
             }
         }
-        configureCacheDeps()
 
         routing {
             route("/api") {
