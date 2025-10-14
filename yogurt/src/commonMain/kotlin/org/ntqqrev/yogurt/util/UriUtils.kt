@@ -14,26 +14,24 @@ import kotlin.io.encoding.Base64
 
 val httpClient = createHttpClient()
 
-suspend fun resolveUri(uri: String): ByteArray {
-    return when {
-        uri.startsWith("file://") -> {
-            val filePath = uri.removePrefix("file://")
-            withContext(Dispatchers.Default) {
-                SystemFileSystem.source(Path(filePath.decodeURLPart()))
-                    .buffered()
-                    .use { it.readByteArray() }
-            }
+suspend fun resolveUri(uri: String): ByteArray = when {
+    uri.startsWith("file://") -> {
+        val filePath = uri.removePrefix("file://")
+        withContext(Dispatchers.Default) {
+            SystemFileSystem.source(Path(filePath.decodeURLPart()))
+                .buffered()
+                .use { it.readByteArray() }
         }
-
-        uri.startsWith("http://") || uri.startsWith("https://") -> {
-            httpClient.get(uri).readRawBytes()
-        }
-
-        uri.startsWith("base64://") -> {
-            val base64Data = uri.removePrefix("base64://")
-            Base64.decode(base64Data)
-        }
-
-        else -> throw IllegalArgumentException("Unsupported URI scheme: $uri")
     }
+
+    uri.startsWith("http://") || uri.startsWith("https://") -> {
+        httpClient.get(uri).readRawBytes()
+    }
+
+    uri.startsWith("base64://") -> {
+        val base64Data = uri.removePrefix("base64://")
+        Base64.decode(base64Data)
+    }
+
+    else -> throw IllegalArgumentException("Unsupported URI scheme: $uri")
 }

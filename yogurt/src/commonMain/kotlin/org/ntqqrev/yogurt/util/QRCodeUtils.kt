@@ -44,18 +44,16 @@ fun generateTerminalQRCode(data: String): String {
     return b.toString()
 }
 
-fun Application.configureQRCodeDisplay() {
-    launch {
-        val bot = dependencies.resolve<Bot>()
-        val logger = bot.createLogger("QRCode")
-        bot.eventFlow.filterIsInstance<QRCodeGeneratedEvent>().collect {
-            logger.i { "请用手机 QQ 扫描二维码：\n" + generateTerminalQRCode(it.url) }
-            logger.i { "或使用以下 URL 生成二维码并扫描：" }
-            logger.i { it.url }
-            SystemFileSystem.sink(qrCodePath).buffered().use { sink ->
-                sink.write(it.png)
-            }
-            logger.i { "二维码文件已保存至 ${SystemFileSystem.resolve(qrCodePath)}" }
+fun Application.configureQRCodeDisplay() = launch {
+    val bot = dependencies.resolve<Bot>()
+    val logger = bot.createLogger("QRCode")
+    bot.eventFlow.filterIsInstance<QRCodeGeneratedEvent>().collect {
+        logger.i { "请用手机 QQ 扫描二维码：\n" + generateTerminalQRCode(it.url) }
+        logger.i { "或使用以下 URL 生成二维码并扫描：" }
+        logger.i { it.url }
+        SystemFileSystem.sink(qrCodePath).buffered().use { sink ->
+            sink.write(it.png)
         }
+        logger.i { "二维码文件已保存至 ${SystemFileSystem.resolve(qrCodePath)}" }
     }
 }

@@ -10,21 +10,19 @@ import kotlinx.coroutines.launch
 import org.ntqqrev.acidify.Bot
 import org.ntqqrev.yogurt.transform.transformAcidifyEvent
 
-fun Route.configureMilkyEventWebSocket() {
-    webSocket {
-        val bot = application.dependencies.resolve<Bot>()
-        val logger = bot.createLogger("WebSocketModule")
-        logger.i { "${call.request.local.remoteAddress} 通过 WebSocket 连接" }
-        launch {
-            bot.eventFlow.collect { event ->
-                application.transformAcidifyEvent(event)?.let { sendSerialized(it) }
-            }
+fun Route.configureMilkyEventWebSocket() = webSocket {
+    val bot = application.dependencies.resolve<Bot>()
+    val logger = bot.createLogger("WebSocketModule")
+    logger.i { "${call.request.local.remoteAddress} 通过 WebSocket 连接" }
+    launch {
+        bot.eventFlow.collect { event ->
+            application.transformAcidifyEvent(event)?.let { sendSerialized(it) }
         }
-        val reason = closeReason.await()
-        if (reason?.code == CloseReason.Codes.NORMAL.code) {
-            logger.i { "${call.request.local.remoteAddress} 断开 WebSocket 连接" }
-        } else {
-            logger.w { "${call.request.local.remoteAddress} 异常断开 WebSocket 连接 $reason" }
-        }
+    }
+    val reason = closeReason.await()
+    if (reason?.code == CloseReason.Codes.NORMAL.code) {
+        logger.i { "${call.request.local.remoteAddress} 断开 WebSocket 连接" }
+    } else {
+        logger.w { "${call.request.local.remoteAddress} 异常断开 WebSocket 连接 $reason" }
     }
 }

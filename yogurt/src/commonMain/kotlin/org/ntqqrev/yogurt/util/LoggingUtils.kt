@@ -33,313 +33,311 @@ private val BotGroupMember.displayString: String
     get() = TextColors.blue("$displayName ($uin)")
 
 @Suppress("duplicatedCode")
-fun Application.configureEventLogging() {
-    launch {
-        val bot = dependencies.resolve<Bot>()
-        val logger = bot.createLogger("Logging")
+fun Application.configureEventLogging() = launch {
+    val bot = dependencies.resolve<Bot>()
+    val logger = bot.createLogger("Logging")
 
-        fun logAsMessage(supplier: MessageSupplier) {
-            (when (config.logging.messageLogLevel) {
-                LogLevel.VERBOSE -> logger::v
-                LogLevel.DEBUG -> logger::d
-                LogLevel.INFO -> logger::i
-                LogLevel.WARN -> logger::w
-                LogLevel.ERROR -> logger::e
-            }).invoke(supplier)
-        }
+    fun logAsMessage(supplier: MessageSupplier) {
+        (when (config.logging.messageLogLevel) {
+            LogLevel.VERBOSE -> logger::v
+            LogLevel.DEBUG -> logger::d
+            LogLevel.INFO -> logger::i
+            LogLevel.WARN -> logger::w
+            LogLevel.ERROR -> logger::e
+        }).invoke(supplier)
+    }
 
-        bot.eventFlow.collect {
-            when (it) {
-                is MessageReceiveEvent -> {
-                    val b = StringBuilder()
-                    when (it.message.scene) {
-                        MessageScene.FRIEND -> {
-                            val friend = bot.getFriend(it.message.peerUin) ?: return@collect
-                            b.append("[${friend.displayString}]")
-                        }
-
-                        MessageScene.GROUP -> {
-                            val group = bot.getGroup(it.message.peerUin) ?: return@collect
-                            val member = group.getMember(it.message.senderUin) ?: return@collect
-                            b.append("[${group.displayString}] [${member.displayString}]")
-                        }
-
-                        else -> {
-                            b.append("[(${it.message.peerUin})]")
-                        }
-                    }
-                    b.append(" ")
-                    b.append(
-                        it.message.segments.joinToString("")
-                            .joinToSingleLine()
-                            .shorten(50)
-                    )
-
-                    logAsMessage { b.toString() }
-                }
-
-                is MessageRecallEvent -> {
-                    val b = StringBuilder()
-                    when (it.scene) {
-                        MessageScene.FRIEND -> {
-                            val friend = bot.getFriend(it.peerUin) ?: return@collect
-                            b.append("[${friend.displayString}] ")
-                            if (it.senderUin == bot.uin) {
-                                b.append("你撤回了一条消息")
-                            } else {
-                                b.append("撤回了一条消息")
-                            }
-                        }
-
-                        MessageScene.GROUP -> {
-                            val group = bot.getGroup(it.peerUin) ?: return@collect
-                            val sender = group.getMember(it.senderUin) ?: return@collect
-                            val operator = group.getMember(it.operatorUin) ?: return@collect
-
-                            b.append("[${group.displayString}] ")
-                            b.append("[${sender.displayString}] ")
-
-                            if (it.senderUin == it.operatorUin) {
-                                b.append("撤回了一条消息")
-                            } else {
-                                b.append("的消息被 [${operator.displayString}] 撤回")
-                            }
-                        }
-
-                        else -> return@collect
-                    }
-                    if (it.displaySuffix.isNotBlank()) {
-                        b.append("，${it.displaySuffix}")
+    bot.eventFlow.collect {
+        when (it) {
+            is MessageReceiveEvent -> {
+                val b = StringBuilder()
+                when (it.message.scene) {
+                    MessageScene.FRIEND -> {
+                        val friend = bot.getFriend(it.message.peerUin) ?: return@collect
+                        b.append("[${friend.displayString}]")
                     }
 
-                    logAsMessage { b.toString() }
+                    MessageScene.GROUP -> {
+                        val group = bot.getGroup(it.message.peerUin) ?: return@collect
+                        val member = group.getMember(it.message.senderUin) ?: return@collect
+                        b.append("[${group.displayString}] [${member.displayString}]")
+                    }
+
+                    else -> {
+                        b.append("[(${it.message.peerUin})]")
+                    }
                 }
+                b.append(" ")
+                b.append(
+                    it.message.segments.joinToString("")
+                        .joinToSingleLine()
+                        .shorten(50)
+                )
 
-                is BotOfflineEvent -> {
-                    logger.e { "Bot 已离线，原因：${it.reason}" }
-                }
+                logAsMessage { b.toString() }
+            }
 
-                is FriendNudgeEvent -> {
-                    val b = StringBuilder()
-                    val friend = bot.getFriend(it.userUin) ?: return@collect
-
-                    if (it.isSelfSend) {
-                        b.append("你")
-                        b.append(it.displayAction)
-                        if (it.isSelfReceive) {
-                            b.append("自己")
+            is MessageRecallEvent -> {
+                val b = StringBuilder()
+                when (it.scene) {
+                    MessageScene.FRIEND -> {
+                        val friend = bot.getFriend(it.peerUin) ?: return@collect
+                        b.append("[${friend.displayString}] ")
+                        if (it.senderUin == bot.uin) {
+                            b.append("你撤回了一条消息")
                         } else {
-                            b.append(friend.displayString)
-                            b.append(' ')
+                            b.append("撤回了一条消息")
                         }
-                        b.append(it.displaySuffix)
+                    }
+
+                    MessageScene.GROUP -> {
+                        val group = bot.getGroup(it.peerUin) ?: return@collect
+                        val sender = group.getMember(it.senderUin) ?: return@collect
+                        val operator = group.getMember(it.operatorUin) ?: return@collect
+
+                        b.append("[${group.displayString}] ")
+                        b.append("[${sender.displayString}] ")
+
+                        if (it.senderUin == it.operatorUin) {
+                            b.append("撤回了一条消息")
+                        } else {
+                            b.append("的消息被 [${operator.displayString}] 撤回")
+                        }
+                    }
+
+                    else -> return@collect
+                }
+                if (it.displaySuffix.isNotBlank()) {
+                    b.append("，${it.displaySuffix}")
+                }
+
+                logAsMessage { b.toString() }
+            }
+
+            is BotOfflineEvent -> {
+                logger.e { "Bot 已离线，原因：${it.reason}" }
+            }
+
+            is FriendNudgeEvent -> {
+                val b = StringBuilder()
+                val friend = bot.getFriend(it.userUin) ?: return@collect
+
+                if (it.isSelfSend) {
+                    b.append("你")
+                    b.append(it.displayAction)
+                    if (it.isSelfReceive) {
+                        b.append("自己")
                     } else {
                         b.append(friend.displayString)
                         b.append(' ')
-                        b.append(it.displayAction)
-                        if (it.isSelfReceive) {
-                            b.append("你")
-                        } else {
-                            b.append("自己")
-                        }
-                        b.append(it.displaySuffix)
-                    }
-
-                    logAsMessage { b.toString() }
-                }
-
-                is FriendRequestEvent -> {
-                    logAsMessage { "收到来自 ${it.initiatorUin} 的好友请求，附加信息：${it.comment}" }
-                }
-
-                is GroupAdminChangeEvent -> {
-                    val b = StringBuilder()
-                    val group = bot.getGroup(it.groupUin) ?: return@collect
-                    val operator = group.getMember(it.userUin) ?: return@collect
-
-                    b.append("[${group.displayString}] [${operator.displayString}] ")
-                    b.append(if (it.isSet) "被设置为" else "被取消")
-                    b.append("管理员")
-
-                    logAsMessage { b.toString() }
-                }
-
-                is GroupEssenceMessageChangeEvent -> {
-                    val b = StringBuilder()
-                    val group = bot.getGroup(it.groupUin) ?: return@collect
-
-                    b.append("[${group.displayString}] ")
-                    b.append("消息 #${it.messageSeq} ")
-                    b.append(if (it.isSet) "被设置为" else "被取消")
-                    b.append("精华消息")
-
-                    logAsMessage { b.toString() }
-                }
-
-                is GroupInvitationEvent -> {
-                    logAsMessage { "${it.initiatorUin} 邀请自己加入群 ${it.groupUin}" }
-                }
-
-                is GroupInvitedJoinRequestEvent -> {
-                    val b = StringBuilder()
-                    val group = bot.getGroup(it.groupUin) ?: return@collect
-                    val initiator = group.getMember(it.initiatorUin) ?: return@collect
-
-                    b.append("[${group.displayString}] ")
-                    b.append("[${initiator.displayString}] ")
-                    b.append("邀请 ${it.targetUserUin} 加入群聊")
-
-                    logAsMessage { b.toString() }
-                }
-
-                is GroupJoinRequestEvent -> {
-                    val b = StringBuilder()
-                    val group = bot.getGroup(it.groupUin) ?: return@collect
-
-                    b.append("[${group.displayString}] ")
-                    b.append("收到 ${it.initiatorUin} 的入群申请，附加信息：${it.comment} ")
-
-                    logAsMessage { b.toString() }
-                }
-
-                is GroupMemberIncreaseEvent -> {
-                    val b = StringBuilder()
-                    val group = bot.getGroup(it.groupUin) ?: return@collect
-
-                    b.append("[${group.displayString}] ")
-                    b.append("${it.userUin} ")
-
-                    when {
-                        it.operatorUin != null -> {
-                            val operator = group.getMember(it.operatorUin!!) ?: return@collect
-                            b.append("被 [${operator.displayString}] 同意加入群聊")
-                        }
-
-                        it.invitorUin != null -> {
-                            val invitor = group.getMember(it.invitorUin!!) ?: return@collect
-                            b.append("被 [${invitor.displayString}] 邀请加入群聊")
-                        }
-
-                        else -> {
-                            b.append("加入了群聊")
-                        }
-                    }
-
-                    logAsMessage { b.toString() }
-                }
-
-                is GroupMemberDecreaseEvent -> {
-                    val b = StringBuilder()
-                    val group = bot.getGroup(it.groupUin) ?: return@collect
-
-                    b.append("[${group.displayString}] ")
-                    b.append("${it.userUin} ")
-
-                    if (it.operatorUin != null && it.operatorUin != it.userUin) {
-                        val operator = group.getMember(it.operatorUin!!) ?: return@collect
-                        b.append("被 [${operator.displayString}] 移出群聊")
-                    } else {
-                        b.append("退出了群聊")
-                    }
-
-                    logAsMessage { b.toString() }
-                }
-
-                is GroupNameChangeEvent -> {
-                    val b = StringBuilder()
-                    val group = bot.getGroup(it.groupUin) ?: return@collect
-                    val operator = group.getMember(it.operatorUin) ?: return@collect
-
-                    b.append("[${group.displayString}] ")
-                    b.append("[${operator.displayString}] ")
-                    b.append("将群名称修改为：${it.newGroupName}")
-
-                    logAsMessage { b.toString() }
-                }
-
-                is GroupMessageReactionEvent -> {
-                    val b = StringBuilder()
-                    val group = bot.getGroup(it.groupUin) ?: return@collect
-                    val user = group.getMember(it.userUin) ?: return@collect
-
-                    b.append("[${group.displayString}] ")
-                    b.append("[${user.displayString}] ")
-
-                    if (it.isAdd) {
-                        b.append("对消息 #${it.messageSeq} 添加了表情回应")
-                    } else {
-                        b.append("取消了对消息 #${it.messageSeq} 的表情回应")
-                    }
-
-                    b.append(" ")
-                    b.append(bot.faceDetailMap[it.faceId]?.qDes ?: it.faceId)
-
-                    logAsMessage { b.toString() }
-                }
-
-                is GroupMuteEvent -> {
-                    val b = StringBuilder()
-                    val group = bot.getGroup(it.groupUin) ?: return@collect
-                    val user = group.getMember(it.userUin) ?: return@collect
-                    val operator = group.getMember(it.operatorUin) ?: return@collect
-
-                    b.append("[${group.displayString}] ")
-                    b.append("[${user.displayString}] ")
-
-                    if (it.duration == 0) {
-                        b.append("被 [${operator.displayString}] 解除禁言")
-                    } else {
-                        b.append("被 [${operator.displayString}] 禁言 ${it.duration} 秒")
-                    }
-
-                    logAsMessage { b.toString() }
-                }
-
-                is GroupWholeMuteEvent -> {
-                    val b = StringBuilder()
-                    val group = bot.getGroup(it.groupUin) ?: return@collect
-                    val operator = group.getMember(it.operatorUin) ?: return@collect
-
-                    b.append("[${group.displayString}] ")
-                    b.append("[${operator.displayString}] ")
-
-                    if (it.isMute) {
-                        b.append("开启了全员禁言")
-                    } else {
-                        b.append("关闭了全员禁言")
-                    }
-
-                    logAsMessage { b.toString() }
-                }
-
-                is GroupNudgeEvent -> {
-                    val b = StringBuilder()
-                    val group = bot.getGroup(it.groupUin) ?: return@collect
-                    val sender = group.getMember(it.senderUin) ?: return@collect
-                    val receiver = group.getMember(it.receiverUin) ?: return@collect
-
-                    b.append("[${group.displayString}] ")
-                    if (it.senderUin == bot.uin) {
-                        b.append("你")
-                    } else {
-                        b.append(sender.displayString)
-                        b.append(' ')
-                    }
-                    b.append(it.displayAction)
-                    if (it.receiverUin == bot.uin) {
-                        if (it.senderUin == bot.uin) {
-                            b.append("自己")
-                        } else {
-                            b.append("你")
-                        }
-                    } else {
-                        b.append(receiver.displayString)
-                        b.append(' ')
                     }
                     b.append(it.displaySuffix)
-
-                    logAsMessage { b.toString() }
+                } else {
+                    b.append(friend.displayString)
+                    b.append(' ')
+                    b.append(it.displayAction)
+                    if (it.isSelfReceive) {
+                        b.append("你")
+                    } else {
+                        b.append("自己")
+                    }
+                    b.append(it.displaySuffix)
                 }
+
+                logAsMessage { b.toString() }
+            }
+
+            is FriendRequestEvent -> {
+                logAsMessage { "收到来自 ${it.initiatorUin} 的好友请求，附加信息：${it.comment}" }
+            }
+
+            is GroupAdminChangeEvent -> {
+                val b = StringBuilder()
+                val group = bot.getGroup(it.groupUin) ?: return@collect
+                val operator = group.getMember(it.userUin) ?: return@collect
+
+                b.append("[${group.displayString}] [${operator.displayString}] ")
+                b.append(if (it.isSet) "被设置为" else "被取消")
+                b.append("管理员")
+
+                logAsMessage { b.toString() }
+            }
+
+            is GroupEssenceMessageChangeEvent -> {
+                val b = StringBuilder()
+                val group = bot.getGroup(it.groupUin) ?: return@collect
+
+                b.append("[${group.displayString}] ")
+                b.append("消息 #${it.messageSeq} ")
+                b.append(if (it.isSet) "被设置为" else "被取消")
+                b.append("精华消息")
+
+                logAsMessage { b.toString() }
+            }
+
+            is GroupInvitationEvent -> {
+                logAsMessage { "${it.initiatorUin} 邀请自己加入群 ${it.groupUin}" }
+            }
+
+            is GroupInvitedJoinRequestEvent -> {
+                val b = StringBuilder()
+                val group = bot.getGroup(it.groupUin) ?: return@collect
+                val initiator = group.getMember(it.initiatorUin) ?: return@collect
+
+                b.append("[${group.displayString}] ")
+                b.append("[${initiator.displayString}] ")
+                b.append("邀请 ${it.targetUserUin} 加入群聊")
+
+                logAsMessage { b.toString() }
+            }
+
+            is GroupJoinRequestEvent -> {
+                val b = StringBuilder()
+                val group = bot.getGroup(it.groupUin) ?: return@collect
+
+                b.append("[${group.displayString}] ")
+                b.append("收到 ${it.initiatorUin} 的入群申请，附加信息：${it.comment} ")
+
+                logAsMessage { b.toString() }
+            }
+
+            is GroupMemberIncreaseEvent -> {
+                val b = StringBuilder()
+                val group = bot.getGroup(it.groupUin) ?: return@collect
+
+                b.append("[${group.displayString}] ")
+                b.append("${it.userUin} ")
+
+                when {
+                    it.operatorUin != null -> {
+                        val operator = group.getMember(it.operatorUin!!) ?: return@collect
+                        b.append("被 [${operator.displayString}] 同意加入群聊")
+                    }
+
+                    it.invitorUin != null -> {
+                        val invitor = group.getMember(it.invitorUin!!) ?: return@collect
+                        b.append("被 [${invitor.displayString}] 邀请加入群聊")
+                    }
+
+                    else -> {
+                        b.append("加入了群聊")
+                    }
+                }
+
+                logAsMessage { b.toString() }
+            }
+
+            is GroupMemberDecreaseEvent -> {
+                val b = StringBuilder()
+                val group = bot.getGroup(it.groupUin) ?: return@collect
+
+                b.append("[${group.displayString}] ")
+                b.append("${it.userUin} ")
+
+                if (it.operatorUin != null && it.operatorUin != it.userUin) {
+                    val operator = group.getMember(it.operatorUin!!) ?: return@collect
+                    b.append("被 [${operator.displayString}] 移出群聊")
+                } else {
+                    b.append("退出了群聊")
+                }
+
+                logAsMessage { b.toString() }
+            }
+
+            is GroupNameChangeEvent -> {
+                val b = StringBuilder()
+                val group = bot.getGroup(it.groupUin) ?: return@collect
+                val operator = group.getMember(it.operatorUin) ?: return@collect
+
+                b.append("[${group.displayString}] ")
+                b.append("[${operator.displayString}] ")
+                b.append("将群名称修改为：${it.newGroupName}")
+
+                logAsMessage { b.toString() }
+            }
+
+            is GroupMessageReactionEvent -> {
+                val b = StringBuilder()
+                val group = bot.getGroup(it.groupUin) ?: return@collect
+                val user = group.getMember(it.userUin) ?: return@collect
+
+                b.append("[${group.displayString}] ")
+                b.append("[${user.displayString}] ")
+
+                if (it.isAdd) {
+                    b.append("对消息 #${it.messageSeq} 添加了表情回应")
+                } else {
+                    b.append("取消了对消息 #${it.messageSeq} 的表情回应")
+                }
+
+                b.append(" ")
+                b.append(bot.faceDetailMap[it.faceId]?.qDes ?: it.faceId)
+
+                logAsMessage { b.toString() }
+            }
+
+            is GroupMuteEvent -> {
+                val b = StringBuilder()
+                val group = bot.getGroup(it.groupUin) ?: return@collect
+                val user = group.getMember(it.userUin) ?: return@collect
+                val operator = group.getMember(it.operatorUin) ?: return@collect
+
+                b.append("[${group.displayString}] ")
+                b.append("[${user.displayString}] ")
+
+                if (it.duration == 0) {
+                    b.append("被 [${operator.displayString}] 解除禁言")
+                } else {
+                    b.append("被 [${operator.displayString}] 禁言 ${it.duration} 秒")
+                }
+
+                logAsMessage { b.toString() }
+            }
+
+            is GroupWholeMuteEvent -> {
+                val b = StringBuilder()
+                val group = bot.getGroup(it.groupUin) ?: return@collect
+                val operator = group.getMember(it.operatorUin) ?: return@collect
+
+                b.append("[${group.displayString}] ")
+                b.append("[${operator.displayString}] ")
+
+                if (it.isMute) {
+                    b.append("开启了全员禁言")
+                } else {
+                    b.append("关闭了全员禁言")
+                }
+
+                logAsMessage { b.toString() }
+            }
+
+            is GroupNudgeEvent -> {
+                val b = StringBuilder()
+                val group = bot.getGroup(it.groupUin) ?: return@collect
+                val sender = group.getMember(it.senderUin) ?: return@collect
+                val receiver = group.getMember(it.receiverUin) ?: return@collect
+
+                b.append("[${group.displayString}] ")
+                if (it.senderUin == bot.uin) {
+                    b.append("你")
+                } else {
+                    b.append(sender.displayString)
+                    b.append(' ')
+                }
+                b.append(it.displayAction)
+                if (it.receiverUin == bot.uin) {
+                    if (it.senderUin == bot.uin) {
+                        b.append("自己")
+                    } else {
+                        b.append("你")
+                    }
+                } else {
+                    b.append(receiver.displayString)
+                    b.append(' ')
+                }
+                b.append(it.displaySuffix)
+
+                logAsMessage { b.toString() }
             }
         }
     }

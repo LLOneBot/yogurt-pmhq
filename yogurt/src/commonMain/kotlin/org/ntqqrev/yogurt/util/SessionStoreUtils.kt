@@ -17,15 +17,13 @@ import org.ntqqrev.acidify.event.SessionStoreUpdatedEvent
 
 val sessionStorePath = Path("session-store.json")
 
-fun Application.configureSessionStoreAutoSave() {
-    launch {
-        val bot = dependencies.resolve<Bot>()
-        val logger = bot.createLogger("SessionStoreUtils")
-        bot.eventFlow.filterIsInstance<SessionStoreUpdatedEvent>().collect {
-            logger.i { "SessionStore 已更新，正在保存至文件..." }
-            SystemFileSystem.sink(sessionStorePath).buffered().use { source ->
-                Json.encodeToSink(it.sessionStore, source)
-            }
+fun Application.configureSessionStoreAutoSave() = launch {
+    val bot = dependencies.resolve<Bot>()
+    val logger = bot.createLogger("SessionStoreUtils")
+    bot.eventFlow.filterIsInstance<SessionStoreUpdatedEvent>().collect {
+        logger.i { "SessionStore 已更新，正在保存至文件..." }
+        SystemFileSystem.sink(sessionStorePath).buffered().use { source ->
+            Json.encodeToSink(it.sessionStore, source)
         }
     }
 }

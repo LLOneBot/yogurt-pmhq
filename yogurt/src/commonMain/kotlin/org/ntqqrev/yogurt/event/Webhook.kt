@@ -13,27 +13,26 @@ import org.ntqqrev.milky.milkyJsonModule
 import org.ntqqrev.yogurt.YogurtApp.config
 import org.ntqqrev.yogurt.transform.transformAcidifyEvent
 
-fun Application.configureMilkyEventWebhook() {
-    val webhookClient = createHttpClient {
-        install(ContentNegotiation) {
-            json(milkyJsonModule)
-        }
+val webhookClient = createHttpClient {
+    install(ContentNegotiation) {
+        json(milkyJsonModule)
     }
-    launch {
-        val bot = dependencies.resolve<Bot>()
-        val logger = bot.createLogger("WebhookModule")
-        bot.eventFlow.collect { event ->
-            transformAcidifyEvent(event)?.let {
-                config.webhookConfig.url.forEach { webhookUrl ->
-                    launch {
-                        try {
-                            webhookClient.post(webhookUrl) {
-                                contentType(ContentType.Application.Json)
-                                setBody(it)
-                            }
-                        } catch (e: Exception) {
-                            logger.w(e) { "发送事件到 Webhook URL $webhookUrl 失败" }
+}
+
+fun Application.configureMilkyEventWebhook() = launch {
+    val bot = dependencies.resolve<Bot>()
+    val logger = bot.createLogger("WebhookModule")
+    bot.eventFlow.collect { event ->
+        transformAcidifyEvent(event)?.let {
+            config.webhookConfig.url.forEach { webhookUrl ->
+                launch {
+                    try {
+                        webhookClient.post(webhookUrl) {
+                            contentType(ContentType.Application.Json)
+                            setBody(it)
                         }
+                    } catch (e: Exception) {
+                        logger.w(e) { "发送事件到 Webhook URL $webhookUrl 失败" }
                     }
                 }
             }
