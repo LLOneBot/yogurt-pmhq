@@ -203,7 +203,7 @@ suspend fun YogurtMessageBuildingContext.applySegment(segment: OutgoingSegment) 
             val imageInfo = getImageInfo(imageData)
             image(
                 raw = imageData,
-                format = imageInfo.format,
+                format = imageInfo.format.toAcidifyFormat(),
                 width = imageInfo.width,
                 height = imageInfo.height,
                 subType = segment.data.subType.toImageSubType(),
@@ -247,7 +247,7 @@ suspend fun YogurtMessageBuildingContext.applySegment(segment: OutgoingSegment) 
                 height = videoInfo.height,
                 duration = videoInfo.duration.inWholeSeconds,
                 thumb = thumbData,
-                thumbFormat = thumbInfo.format
+                thumbFormat = thumbInfo.format.toAcidifyFormat()
             )
         }
 
@@ -345,4 +345,13 @@ fun String.toMessageScene() = when (this) {
     "group" -> MessageScene.GROUP
     "temp" -> MessageScene.TEMP
     else -> throw IllegalArgumentException("Unknown message scene: $this")
+}
+
+fun org.ntqqrev.yogurt.codec.ImageFormat.toAcidifyFormat() = when (this) {
+    org.ntqqrev.yogurt.codec.ImageFormat.PNG -> ImageFormat.PNG
+    org.ntqqrev.yogurt.codec.ImageFormat.GIF -> ImageFormat.GIF
+    org.ntqqrev.yogurt.codec.ImageFormat.JPEG -> ImageFormat.JPEG
+    org.ntqqrev.yogurt.codec.ImageFormat.BMP -> ImageFormat.BMP
+    org.ntqqrev.yogurt.codec.ImageFormat.WEBP -> ImageFormat.WEBP
+    org.ntqqrev.yogurt.codec.ImageFormat.TIFF -> ImageFormat.TIFF
 }

@@ -1,6 +1,8 @@
 package org.ntqqrev.yogurt.codec
 
-import org.ntqqrev.acidify.message.ImageFormat
+enum class ImageFormat {
+    PNG, JPEG, GIF, BMP, WEBP, TIFF
+}
 
 data class ImageInfo(
     val format: ImageFormat,

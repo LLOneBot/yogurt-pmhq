@@ -5,7 +5,6 @@ plugins {
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation(project(":acidify-core"))
             implementation(libs.kotlinx.io)
         }
         jvmMain.dependencies {
