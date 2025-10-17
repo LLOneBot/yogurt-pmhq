@@ -63,6 +63,11 @@ class YogurtConfig(
             }
             return SystemFileSystem.source(path).buffered().use {
                 jsonModule.decodeFromSource<YogurtConfig>(it)
+            }.also {
+                SystemFileSystem.sink(path).buffered().use { sink ->
+                    jsonModule.encodeToSink(it, sink)
+                    // rewrite it to format, and add new fields if any
+                }
             }
         }
     }
