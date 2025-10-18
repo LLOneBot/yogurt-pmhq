@@ -8,6 +8,7 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
 import org.ntqqrev.acidify.internal.LagrangeClient
 import org.ntqqrev.acidify.internal.packet.message.media.*
+import org.ntqqrev.acidify.internal.service.system.FetchHighwayInfo
 import org.ntqqrev.acidify.internal.util.md5
 import org.ntqqrev.acidify.internal.util.toIpString
 import org.ntqqrev.acidify.message.MessageScene
@@ -20,15 +21,19 @@ internal class HighwayContext(client: LagrangeClient) : AbstractContext(client) 
     private var highwayPort: Int = 0
     private var sigSession: ByteArray = ByteArray(0)
     private val httpClient = createHttpClient()
+    private val logger = client.createLogger(this)
 
     companion object {
         const val MAX_BLOCK_SIZE = 1024 * 1024 // 1MB
     }
 
-    fun setHighwayUrl(host: String, port: Int, sigSession: ByteArray) {
-        this.highwayHost = host
-        this.highwayPort = port
-        this.sigSession = sigSession
+    override suspend fun postOnline() {
+        val highwayInfo = client.callService(FetchHighwayInfo)
+        val (host, port) = highwayInfo.servers[1]!![0]
+        highwayHost = host
+        highwayPort = port
+        sigSession = highwayInfo.sigSession
+        logger.d { "已配置 Highway 服务器: $host:$port" }
     }
 
     private suspend fun upload(

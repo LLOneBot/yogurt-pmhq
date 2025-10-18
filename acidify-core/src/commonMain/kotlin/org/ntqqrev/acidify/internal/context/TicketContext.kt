@@ -32,11 +32,14 @@ internal class TicketContext(client: LagrangeClient) : AbstractContext(client) {
         }
     }
 
-    val currentSKey = KeyWithLifetime.dummy()
-    val psKeyCache = ConcurrentMutableMap<String, KeyWithLifetime>()
-
+    private val currentSKey = KeyWithLifetime.dummy()
+    private val psKeyCache = ConcurrentMutableMap<String, KeyWithLifetime>()
     private val httpClient = createHttpClient {
         install(HttpCookies)
+    }
+
+    override suspend fun postOnline() {
+        getSKey()
     }
 
     suspend fun getSKey(): String {

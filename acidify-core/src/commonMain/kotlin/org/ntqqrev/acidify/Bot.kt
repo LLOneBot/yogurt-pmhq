@@ -85,7 +85,6 @@ class Bot(
     internal val faceDetailMapMut = mutableMapOf<String, BotFaceDetail>()
     internal val uin2uidMap = ConcurrentMutableMap<Long, String>()
     internal val uid2uinMap = ConcurrentMutableMap<String, Long>()
-    internal var heartbeatJob: Job? = null
     internal var eventCollectJob: Job? = null
 
     private val friendCache = CacheUtility(
@@ -235,22 +234,7 @@ class Bot(
         }
         isLoggedIn = true
         logger.i { "用户 $uin 已上线" }
-
-        val highwayInfo = client.callService(FetchHighwayInfo)
-        val (host, port) = highwayInfo.servers[1]!![0]
-        client.highwayContext.setHighwayUrl(host, port, highwayInfo.sigSession)
-        logger.d { "已配置 Highway 服务器: $host:$port" }
-
-        heartbeatJob = launch {
-            while (isLoggedIn) {
-                try {
-                    client.callService(Heartbeat)
-                } catch (e: Exception) {
-                    logger.w(e) { "心跳包发送失败" }
-                }
-                delay(270_000L) // 4.5min
-            }
-        }
+        client.doPostOnlineLogic()
 
         eventCollectJob = launch {
             while (currentCoroutineContext().isActive) {
@@ -276,12 +260,12 @@ class Bot(
      * 下线 Bot，释放资源。
      */
     suspend fun offline() {
-        heartbeatJob?.cancel()
-        heartbeatJob = null
+        client.doPreOfflineLogic()
         eventCollectJob?.cancel()
         eventCollectJob = null
         client.callService(BotOffline)
         logger.i { "用户 $uin 已下线" }
+        client.packetContext.closeConnection()
     }
 
     /**

@@ -19,6 +19,7 @@ import org.ntqqrev.acidify.internal.packet.SsoResponse
 import org.ntqqrev.acidify.internal.packet.system.SsoReservedFields
 import org.ntqqrev.acidify.internal.packet.system.SsoSecureInfo
 import org.ntqqrev.acidify.internal.service.system.BotOnline
+import org.ntqqrev.acidify.internal.service.system.Heartbeat
 import org.ntqqrev.acidify.internal.util.*
 import org.ntqqrev.acidify.pb.PbObject
 import org.ntqqrev.acidify.pb.invoke
@@ -28,7 +29,6 @@ internal class PacketContext(client: LagrangeClient) : AbstractContext(client) {
     private var sequence = Random.nextInt(0x10000, 0x20000)
     private val host = "msfwifi.3g.qq.com"
     private val port = 8080
-
     private val selectorManager = SelectorManager(client.coroutineContext)
     private var currentSocket: Socket? = null
     private lateinit var input: ByteReadChannel
@@ -36,7 +36,7 @@ internal class PacketContext(client: LagrangeClient) : AbstractContext(client) {
     private val pending = ConcurrentMutableMap<Int, CompletableDeferred<SsoResponse>>()
     private val headerLength = 4
     private val sendPacketMutex = Mutex()
-    val signRequiredCommand = setOf(
+    private val signRequiredCommand = setOf(
         "MessageSvc.PbSendMsg",
         "wtlogin.trans_emp",
         "wtlogin.login",
@@ -48,8 +48,24 @@ internal class PacketContext(client: LagrangeClient) : AbstractContext(client) {
         "trpc.login.ecdh.EcdhService.SsoNTLoginPasswordLoginUnusualDevice",
         "OidbSvcTrpcTcp.0x6d9_4"
     )
-
+    private var heartbeatJob: Job? = null
     private val logger = client.createLogger(this)
+
+    override suspend fun postOnline() {
+        heartbeatJob = client.launch {
+            try {
+                client.callService(Heartbeat)
+            } catch (e: Exception) {
+                logger.w(e) { "心跳包发送失败" }
+            }
+            delay(270_000L) // 4.5min
+        }
+    }
+
+    override suspend fun preOffline() {
+        heartbeatJob?.cancel()
+        heartbeatJob = null
+    }
 
     fun startConnectLoop() {
         runBlocking { connect() }
@@ -63,18 +79,32 @@ internal class PacketContext(client: LagrangeClient) : AbstractContext(client) {
                         }) {
                             client.callService(BotOnline)
                             logger.i { "上线包发送成功，重连完成" }
+                            client.doPostOnlineLogic()
                         }
                     }
                     handleReceiveLoop()
                 } catch (e: Exception) {
                     logger.e(e) { "接收数据包时出现错误，5s 后尝试重新连接" }
                     cleanupPendingRequests(e)
+                    client.doPreOfflineLogic()
                     closeConnection()
                     delay(5000)
                     isReconnect = true
                     connect()
                 }
             }
+        }
+    }
+
+    suspend fun closeConnection() {
+        try {
+            input.cancel()
+            output.flushAndClose()
+            currentSocket?.close()
+            currentSocket = null
+            logger.d { "已关闭连接" }
+        } catch (e: Exception) {
+            logger.w(e) { "关闭连接时出现错误" }
         }
     }
 
@@ -245,18 +275,6 @@ internal class PacketContext(client: LagrangeClient) : AbstractContext(client) {
                 )
             }
             pending.clear()
-        }
-    }
-
-    private suspend fun closeConnection() {
-        try {
-            input.cancel()
-            output.flushAndClose()
-            currentSocket?.close()
-            currentSocket = null
-            logger.d { "已关闭连接" }
-        } catch (e: Exception) {
-            logger.w(e) { "关闭连接时出现错误" }
         }
     }
 }
