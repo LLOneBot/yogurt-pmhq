@@ -167,7 +167,7 @@ class Bot(
                     )
                 }
         }
-        client.packetLogic.startConnectLoop()
+        client.packetContext.startConnectLoop()
     }
 
     /**
@@ -238,7 +238,7 @@ class Bot(
 
         val highwayInfo = client.callService(FetchHighwayInfo)
         val (host, port) = highwayInfo.servers[1]!![0]
-        client.highwayLogic.setHighwayUrl(host, port, highwayInfo.sigSession)
+        client.highwayContext.setHighwayUrl(host, port, highwayInfo.sigSession)
         logger.d { "已配置 Highway 服务器: $host:$port" }
 
         heartbeatJob = launch {
@@ -434,12 +434,12 @@ class Bot(
     /**
      * 获取 s_key，用于组成 Cookie。
      */
-    suspend fun getSKey() = client.ticketLogic.getSKey()
+    suspend fun getSKey() = client.ticketContext.getSKey()
 
     /**
      * 获取给定域名的 p_skey，用于组成 Cookie。
      */
-    suspend fun getPSKey(domain: String) = client.ticketLogic.getPSKey(domain)
+    suspend fun getPSKey(domain: String) = client.ticketContext.getPSKey(domain)
 
     /**
      * 获取指定域名的 Cookie 键值对。
@@ -454,7 +454,7 @@ class Bot(
     /**
      * 获取 CSRF Token。
      */
-    suspend fun getCsrfToken() = client.ticketLogic.getCsrfToken()
+    suspend fun getCsrfToken() = client.ticketContext.getCsrfToken()
 
     /**
      * 发送好友消息
@@ -804,7 +804,7 @@ class Bot(
     suspend fun setGroupAvatar(
         groupUin: Long,
         imageData: ByteArray
-    ) = client.highwayLogic.uploadGroupAvatar(groupUin, imageData)
+    ) = client.highwayContext.uploadGroupAvatar(groupUin, imageData)
 
     /**
      * 设置群成员的群名片
@@ -1233,7 +1233,7 @@ class Bot(
         )
 
         if (!uploadResp.fileExist) {
-            client.highwayLogic.uploadGroupFile(
+            client.highwayContext.uploadGroupFile(
                 senderUin = uin,
                 groupUin = groupUin,
                 fileName = fileName,
@@ -1287,7 +1287,7 @@ class Bot(
         )
 
         if (!uploadResp.fileExist) {
-            client.highwayLogic.uploadPrivateFile(
+            client.highwayContext.uploadPrivateFile(
                 receiverUin = friendUin,
                 fileName = fileName,
                 fileData = fileData,

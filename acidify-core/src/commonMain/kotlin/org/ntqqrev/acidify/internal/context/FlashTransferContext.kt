@@ -1,4 +1,4 @@
-package org.ntqqrev.acidify.internal.logic
+package org.ntqqrev.acidify.internal.context
 
 import kotlinx.coroutines.async
 import org.ntqqrev.acidify.crypto.hash.SHA1Stream
@@ -11,13 +11,12 @@ import org.ntqqrev.acidify.internal.util.flashTransferPostWithBlock
 import org.ntqqrev.acidify.internal.util.sha1
 import org.ntqqrev.acidify.pb.invoke
 
-internal class FlashTransferLogic(client: LagrangeClient) : AbstractLogic(client) {
+internal class FlashTransferContext(client: LagrangeClient) : AbstractContext(client) {
     private val logger = client.createLogger(this)
     private val url = "https://multimedia.qfile.qq.com/sliceupload"
 
     companion object {
         const val CHUNK_SIZE = 1024 * 1024 // 1MB
-        private const val TAG = "FlashTransferLogic"
     }
 
     suspend fun uploadFile(uKey: String, appId: Int, bodyStream: ByteArray): Boolean {

@@ -36,23 +36,23 @@ internal object WtLogin : NoInputService<Boolean>("wtlogin.login") {
             writeUShort(9u) // internal command
             writeFully(tlvPack.build())
         }
-        return client.loginLogic.buildWtLogin(packet.readByteArray(), 2064u)
+        return client.loginContext.buildWtLogin(packet.readByteArray(), 2064u)
     }
 
     override fun parse(
         client: LagrangeClient,
         payload: ByteArray
     ): Boolean {
-        val reader = client.loginLogic.parseWtLogin(payload).reader()
+        val reader = client.loginContext.parseWtLogin(payload).reader()
 
         val command = reader.readUShort()
         val state = reader.readUByte()
-        val tlv119Reader = client.loginLogic.readTlv(reader)
+        val tlv119Reader = client.loginContext.readTlv(reader)
 
         if (state.toInt() == 0) {
             val tlv119 = tlv119Reader[0x119u]!!
             val array = TeaProvider.decrypt(tlv119, client.sessionStore.tgtgt)
-            val tlvPack = client.loginLogic.readTlv(array.reader())
+            val tlvPack = client.loginContext.readTlv(array.reader())
             client.sessionStore.apply {
                 d2Key = tlvPack[0x305u]!!
                 uid = Tlv.Body543(tlvPack[0x543u]!!)

@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalTime::class)
 
-package org.ntqqrev.acidify.internal.logic
+package org.ntqqrev.acidify.internal.context
 
 import co.touchlab.stately.collections.ConcurrentMutableMap
 import io.ktor.client.plugins.cookies.*
@@ -12,7 +12,7 @@ import org.ntqqrev.acidify.util.createHttpClient
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
-internal class TicketLogic(client: LagrangeClient) : AbstractLogic(client) {
+internal class TicketContext(client: LagrangeClient) : AbstractContext(client) {
     internal class KeyWithLifetime(var value: String, var expireTime: Long) {
         companion object {
             fun dummy() = KeyWithLifetime("", 0L)

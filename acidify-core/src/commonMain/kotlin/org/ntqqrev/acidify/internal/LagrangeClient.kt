@@ -7,7 +7,7 @@ import org.ntqqrev.acidify.common.AppInfo
 import org.ntqqrev.acidify.common.SessionStore
 import org.ntqqrev.acidify.common.SignProvider
 import org.ntqqrev.acidify.exception.ServiceException
-import org.ntqqrev.acidify.internal.logic.*
+import org.ntqqrev.acidify.internal.context.*
 import org.ntqqrev.acidify.internal.packet.SsoResponse
 import org.ntqqrev.acidify.internal.service.Service
 import org.ntqqrev.acidify.util.log.Logger
@@ -19,11 +19,11 @@ internal class LagrangeClient(
     val createLogger: (Any) -> Logger,
     scope: CoroutineScope,
 ) : CoroutineScope by scope {
-    val loginLogic = LoginLogic(this)
-    val packetLogic = PacketLogic(this)
-    val ticketLogic = TicketLogic(this)
-    val highwayLogic = HighwayLogic(this)
-    val flashTransferLogic = FlashTransferLogic(this)
+    val loginContext = LoginContext(this)
+    val packetContext = PacketContext(this)
+    val ticketContext = TicketContext(this)
+    val highwayContext = HighwayContext(this)
+    val flashTransferContext = FlashTransferContext(this)
 
     val pushChannel = Channel<SsoResponse>(capacity = 15, onBufferOverflow = BufferOverflow.DROP_OLDEST)
 
@@ -31,7 +31,7 @@ internal class LagrangeClient(
 
     suspend fun <T, R> callService(service: Service<T, R>, payload: T, timeout: Long = sendPacketDefaultTimeout): R {
         val byteArray = service.build(this, payload)
-        val resp = packetLogic.sendPacket(service.cmd, byteArray, timeout)
+        val resp = packetContext.sendPacket(service.cmd, byteArray, timeout)
         if (resp.retCode != 0) {
             throw ServiceException(
                 service.cmd,

@@ -1,4 +1,4 @@
-package org.ntqqrev.acidify.internal.logic
+package org.ntqqrev.acidify.internal.context
 
 import io.ktor.util.date.*
 import io.ktor.utils.io.core.*
@@ -10,7 +10,7 @@ import org.ntqqrev.acidify.internal.LagrangeClient
 import org.ntqqrev.acidify.internal.util.*
 import kotlin.random.Random
 
-internal class LoginLogic(client: LagrangeClient) : AbstractLogic(client) {
+internal class LoginContext(client: LagrangeClient) : AbstractContext(client) {
     private val ecdhKey =
         "04928D8850673088B343264E0C6BACB8496D697799F37211DEB25BB73906CB089FEA9639B4E0260498B51A992D50813DA8".hexToByteArray()
     private val ecdhProvider = Ecdh.generateKeyPair(Ecdh.Secp192K1)

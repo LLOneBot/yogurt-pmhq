@@ -29,16 +29,16 @@ internal object FetchQRCode : NoInputService<FetchQRCode.Result>("wtlogin.trans_
             writeBytes(ByteArray(0), Prefix.UINT_16 or Prefix.LENGTH_ONLY)
             writeBytes(tlvPack.build())
         }
-        return client.loginLogic.buildCode2DPacket(packet.readByteArray(), 0x31u)
+        return client.loginContext.buildCode2DPacket(packet.readByteArray(), 0x31u)
     }
 
     override fun parse(client: LagrangeClient, payload: ByteArray): Result {
-        val wtLogin = client.loginLogic.parseWtLogin(payload)
-        val code2d = client.loginLogic.parseCode2DPacket(wtLogin)
+        val wtLogin = client.loginContext.parseWtLogin(payload)
+        val code2d = client.loginContext.parseCode2DPacket(wtLogin)
         val reader = code2d.reader()
         reader.discard(1)
         val sig = reader.readPrefixedBytes(Prefix.UINT_16 or Prefix.LENGTH_ONLY)
-        val tlv = client.loginLogic.readTlv(reader)
+        val tlv = client.loginContext.readTlv(reader)
         client.sessionStore.qrSig = sig
         val respD1Body = TlvQRCode.BodyD1Response(tlv.getValue(0xD1u))
         return Result(

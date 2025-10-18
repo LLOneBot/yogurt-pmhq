@@ -1,4 +1,4 @@
-package org.ntqqrev.acidify.internal.logic
+package org.ntqqrev.acidify.internal.context
 
 import co.touchlab.stately.collections.ConcurrentMutableMap
 import io.ktor.network.selector.*
@@ -24,7 +24,7 @@ import org.ntqqrev.acidify.pb.PbObject
 import org.ntqqrev.acidify.pb.invoke
 import kotlin.random.Random
 
-internal class PacketLogic(client: LagrangeClient) : AbstractLogic(client) {
+internal class PacketContext(client: LagrangeClient) : AbstractContext(client) {
     private var sequence = Random.nextInt(0x10000, 0x20000)
     private val host = "msfwifi.3g.qq.com"
     private val port = 8080

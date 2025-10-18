@@ -1,11 +1,9 @@
-package org.ntqqrev.acidify.internal.logic
+package org.ntqqrev.acidify.internal.context
 
-import io.ktor.client.HttpClient
-import io.ktor.client.request.headers
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
-import io.ktor.client.statement.readRawBytes
-import io.ktor.http.HttpHeaders
+import io.ktor.client.*
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
 import org.ntqqrev.acidify.internal.LagrangeClient
@@ -17,7 +15,7 @@ import org.ntqqrev.acidify.pb.PbObject
 import org.ntqqrev.acidify.pb.invoke
 import org.ntqqrev.acidify.util.createHttpClient
 
-internal class HighwayLogic(client: LagrangeClient) : AbstractLogic(client) {
+internal class HighwayContext(client: LagrangeClient) : AbstractContext(client) {
     private var highwayHost: String = ""
     private var highwayPort: Int = 0
     private var sigSession: ByteArray = ByteArray(0)

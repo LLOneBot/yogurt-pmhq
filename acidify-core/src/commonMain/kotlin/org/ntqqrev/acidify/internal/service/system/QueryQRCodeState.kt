@@ -19,19 +19,19 @@ internal object QueryQRCodeState : NoInputService<QRCodeState>("wtlogin.trans_em
             writeBytes(ByteArray(0), Prefix.UINT_16 or Prefix.LENGTH_ONLY)
             writeUShort(0u)  // actually it is the tlv count, but there is no tlv so 0x0 is used
         }
-        return client.loginLogic.buildCode2DPacket(packet.readByteArray(), 0x12u)
+        return client.loginContext.buildCode2DPacket(packet.readByteArray(), 0x12u)
     }
 
     override fun parse(client: LagrangeClient, payload: ByteArray): QRCodeState {
-        val wtlogin = client.loginLogic.parseWtLogin(payload)
-        val reader = client.loginLogic.parseCode2DPacket(wtlogin).reader()
+        val wtlogin = client.loginContext.parseWtLogin(payload)
+        val reader = client.loginContext.parseCode2DPacket(wtlogin).reader()
         val state = QRCodeState.fromByte(reader.readByte())
         if (state == QRCodeState.CONFIRMED) {
             reader.discard(4)
             client.sessionStore.uin = reader.readUInt().toLong()
             reader.discard(4)
 
-            val tlv = client.loginLogic.readTlv(reader)
+            val tlv = client.loginContext.readTlv(reader)
             client.sessionStore.tgtgt = tlv[0x1eu]!!
             client.sessionStore.encryptedA1 = tlv[0x18u]!!
             client.sessionStore.noPicSig = tlv[0x19u]!!

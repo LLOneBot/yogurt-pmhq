@@ -226,7 +226,7 @@ internal class MessageBuildingContext(
         }
 
         uploadResp.get { uKey }.takeIf { it.isNotEmpty() }?.let {
-            bot.client.highwayLogic.uploadImage(
+            bot.client.highwayContext.uploadImage(
                 image = raw,
                 imageMd5 = imageMd5Bytes,
                 imageSha1 = imageSha1Bytes,
@@ -287,7 +287,7 @@ internal class MessageBuildingContext(
         }
 
         uploadResp.get { uKey }.takeIf { it.isNotEmpty() }?.let {
-            bot.client.highwayLogic.uploadRecord(
+            bot.client.highwayContext.uploadRecord(
                 record = rawSilk,
                 recordMd5 = recordMd5Bytes,
                 recordSha1 = recordSha1Bytes,
@@ -374,7 +374,7 @@ internal class MessageBuildingContext(
         }
 
         uploadResp.get { uKey }.takeIf { it.isNotEmpty() }?.let {
-            bot.client.highwayLogic.uploadVideo(
+            bot.client.highwayContext.uploadVideo(
                 video = raw,
                 videoMd5 = videoMd5Bytes,
                 videoSha1 = videoSha1Bytes,
@@ -384,7 +384,7 @@ internal class MessageBuildingContext(
         } ?: logger.d { "uKey 为空，服务器可能已存在该视频，跳过上传" }
 
         uploadResp.get { subFileInfos }[0].get { uKey }.takeIf { it.isNotEmpty() }?.let {
-            bot.client.highwayLogic.uploadVideoThumbnail(
+            bot.client.highwayContext.uploadVideoThumbnail(
                 thumbnail = thumb,
                 thumbnailMd5 = thumbMd5Bytes,
                 thumbnailSha1 = thumbSha1Bytes,
