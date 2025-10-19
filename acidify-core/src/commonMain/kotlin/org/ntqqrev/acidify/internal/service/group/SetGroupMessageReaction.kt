@@ -9,7 +9,7 @@ internal abstract class SetGroupMessageReaction(isAdd: Boolean) :
     NoOutputOidbService<SetGroupMessageReaction.Req>(0x9082, if (isAdd) 1 else 2) {
     class Req(
         val groupUin: Long,
-        val sequence: Int,
+        val sequence: Long,
         val code: String,
         val type: Int,
     )

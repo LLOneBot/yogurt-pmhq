@@ -1087,7 +1087,7 @@ class Bot(
      */
     suspend fun setGroupMessageReaction(
         groupUin: Long,
-        sequence: Int,
+        sequence: Long,
         code: String,
         isAdd: Boolean = true
     ) = client.callService(
