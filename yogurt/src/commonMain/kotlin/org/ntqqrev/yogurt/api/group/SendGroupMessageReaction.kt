@@ -14,7 +14,7 @@ val SendGroupMessageReaction = ApiEndpoint.SendGroupMessageReaction {
     bot.getGroup(it.groupId)
         ?: throw MilkyApiException(-404, "Group not found")
 
-    bot.setGroupMessageReaction(it.groupId, it.messageSeq.toInt(), it.reaction, it.isAdd)
+    bot.setGroupMessageReaction(it.groupId, it.messageSeq, it.reaction, it.isAdd)
 
     SendGroupMessageReactionOutput()
 }
