@@ -109,13 +109,13 @@ internal interface IncomingSegmentFactory<T : BotIncomingSegment> {
             ctx.consume()
             if (ctx.remainingCount >= 2) {
                 ctx.skip(
-                    if (ctx.tryPeekType { text }?.get { attr6Buf }?.isNotEmpty() == true) {
-                        2 // mention + text
-                    } else if (ctx.tryPeekType { generalFlags } != null) {
-                        if (ctx.message.scene == MessageScene.FRIEND) {
-                            2 // generalFlags + elemFlags2
-                        } else {
-                            min(4, ctx.remainingCount) // generalFlags + elemFlags2 + mention + text
+                    if (ctx.tryPeekType { generalFlags } != null) {
+                        when (ctx.message.scene) {
+                            MessageScene.FRIEND -> 2
+                            // generalFlags + elemFlags2
+                            MessageScene.GROUP -> min(4, ctx.remainingCount)
+                            // generalFlags + elemFlags2 + reply + text
+                            else -> 0
                         }
                     } else 0
                 )
