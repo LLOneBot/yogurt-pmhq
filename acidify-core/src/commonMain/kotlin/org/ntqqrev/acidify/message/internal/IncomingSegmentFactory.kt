@@ -117,7 +117,11 @@ internal interface IncomingSegmentFactory<T : BotIncomingSegment> {
                             // generalFlags + elemFlags2 + reply + text
                             else -> 0
                         }
-                    } else 0
+                    } else when (ctx.message.scene) {
+                        MessageScene.GROUP -> 2
+                        // reply + text
+                        else -> 0
+                    }
                 )
             }
             return BotIncomingSegment.Reply(
