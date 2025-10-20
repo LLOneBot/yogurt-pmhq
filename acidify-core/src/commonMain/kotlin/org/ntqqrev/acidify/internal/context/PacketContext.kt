@@ -144,7 +144,7 @@ internal class PacketContext(client: LagrangeClient) : AbstractContext(client) {
     }
 
     private suspend fun handleReceiveLoop() {
-        while (true) {
+        while (currentCoroutineContext().isActive) {
             val header = input.readByteArray(headerLength)
             val packetLength = header.readUInt32BE(0)
             val packet = input.readByteArray(packetLength.toInt() - 4)
