@@ -7,7 +7,7 @@ import org.ntqqrev.yogurt.util.checkSecurity
 import kotlin.jvm.JvmName
 
 fun main() {
-    println(
+    t.println(
         """
         | .--------------------------------------.
         | |   __  __                       __    |

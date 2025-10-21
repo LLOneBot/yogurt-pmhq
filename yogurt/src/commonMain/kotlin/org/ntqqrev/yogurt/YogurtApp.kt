@@ -52,10 +52,10 @@ object YogurtApp {
             }
         } else SessionStore.empty()
         val appInfo: AppInfo = signProvider.getAppInfo() ?: run {
-            println("获取 AppInfo 失败，使用内置默认值")
+            t.println("获取 AppInfo 失败，使用内置默认值")
             AppInfo.Bundled.Linux
         }
-        println("使用协议 ${appInfo.os} ${appInfo.currentVersion} (AppId: ${appInfo.subAppId})")
+        t.println("使用协议 ${appInfo.os} ${appInfo.currentVersion} (AppId: ${appInfo.subAppId})")
         val bot = Bot(
             appInfo = appInfo,
             sessionStore = sessionStore,

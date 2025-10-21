@@ -6,6 +6,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import org.ntqqrev.yogurt.YogurtApp
+import org.ntqqrev.yogurt.t
 
 val isDockerEnv: Boolean by lazy {
     SystemFileSystem.exists(Path("/.dockerenv"))
@@ -18,7 +19,7 @@ fun checkSecurity() = runBlocking {
         YogurtApp.config.httpConfig.accessToken.isEmpty() &&
         !isDockerEnv
     ) {
-        println(
+        t.println(
             TextColors.brightYellow(
                 """
                     |警告：你可能正在将 Yogurt 的 Milky 服务暴露在公网环境下，且未设置 accessToken。

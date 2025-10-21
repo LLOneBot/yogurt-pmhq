@@ -57,8 +57,8 @@ class YogurtConfig(
                 SystemFileSystem.sink(path).buffered().use {
                     jsonModule.encodeToSink(defaultConfig, it)
                 }
-                println("配置文件已生成于 ${SystemFileSystem.resolve(path)}")
-                println("请根据需要进行修改，修改完成后按 Enter 键继续...")
+                t.println("配置文件已生成于 ${SystemFileSystem.resolve(path)}")
+                t.println("请根据需要进行修改，修改完成后按 Enter 键继续...")
                 readln()
             }
             return SystemFileSystem.source(path).buffered().use {

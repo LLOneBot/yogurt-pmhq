@@ -2,6 +2,7 @@ package org.ntqqrev.acidify.util.log
 
 import com.github.ajalt.mordant.rendering.TextColors.*
 import com.github.ajalt.mordant.rendering.TextStyles.bold
+import com.github.ajalt.mordant.terminal.Terminal
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.format.char
@@ -11,6 +12,7 @@ import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
 object SimpleColoredLogHandler : LogHandler {
+    private val t = Terminal()
     private val timeFormat = LocalDateTime.Format {
         hour()
         char(':')
@@ -66,6 +68,6 @@ object SimpleColoredLogHandler : LogHandler {
                 }(throwable.stackTraceToString())
             )
         }
-        println(b.toString())
+        t.println(b.toString())
     }
 }
