@@ -2,7 +2,7 @@
 
 package org.ntqqrev.yogurt
 
-import io.ktor.util.decodeBase64String
+import io.ktor.util.*
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
@@ -26,7 +26,6 @@ class YogurtConfig(
     @Serializable
     class LoggingConfig(
         val coreLogLevel: LogLevel = LogLevel.DEBUG,
-        val messageLogLevel: LogLevel = LogLevel.INFO
     )
 
     @Serializable
@@ -34,7 +33,7 @@ class YogurtConfig(
         val host: String = "127.0.0.1",
         val port: Int = 3000,
         val accessToken: String = "",
-        val corsOrigins: List<String> = listOf()
+        val corsOrigins: List<String> = listOf(),
     )
 
     @Serializable
@@ -49,6 +48,7 @@ class YogurtConfig(
             encodeDefaults = true
             allowComments = true
             allowTrailingComma = true
+            ignoreUnknownKeys = true
         }
 
         fun loadFromFile(): YogurtConfig {

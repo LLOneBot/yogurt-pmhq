@@ -11,9 +11,6 @@ import org.ntqqrev.acidify.entity.BotGroupMember
 import org.ntqqrev.acidify.event.*
 import org.ntqqrev.acidify.message.MessageScene
 import org.ntqqrev.acidify.util.log.LogHandler
-import org.ntqqrev.acidify.util.log.LogLevel
-import org.ntqqrev.acidify.util.log.MessageSupplier
-import org.ntqqrev.yogurt.YogurtApp.config
 
 expect val logHandler: LogHandler
 
@@ -36,16 +33,6 @@ private val BotGroupMember.displayString: String
 fun Application.configureEventLogging() = launch {
     val bot = dependencies.resolve<Bot>()
     val logger = bot.createLogger("Logging")
-
-    fun logAsMessage(supplier: MessageSupplier) {
-        (when (config.logging.messageLogLevel) {
-            LogLevel.VERBOSE -> logger::v
-            LogLevel.DEBUG -> logger::d
-            LogLevel.INFO -> logger::i
-            LogLevel.WARN -> logger::w
-            LogLevel.ERROR -> logger::e
-        }).invoke(supplier)
-    }
 
     bot.eventFlow.collect {
         when (it) {
@@ -74,7 +61,7 @@ fun Application.configureEventLogging() = launch {
                         .shorten(50)
                 )
 
-                logAsMessage { b.toString() }
+                logger.d { b.toString() }
             }
 
             is MessageRecallEvent -> {
@@ -111,7 +98,7 @@ fun Application.configureEventLogging() = launch {
                     b.append("，${it.displaySuffix}")
                 }
 
-                logAsMessage { b.toString() }
+                logger.d { b.toString() }
             }
 
             is BotOfflineEvent -> {
@@ -144,11 +131,11 @@ fun Application.configureEventLogging() = launch {
                     b.append(it.displaySuffix)
                 }
 
-                logAsMessage { b.toString() }
+                logger.d { b.toString() }
             }
 
             is FriendRequestEvent -> {
-                logAsMessage { "收到来自 ${it.initiatorUin} 的好友请求，附加信息：${it.comment}" }
+                logger.d { "收到来自 ${it.initiatorUin} 的好友请求，附加信息：${it.comment}" }
             }
 
             is GroupAdminChangeEvent -> {
@@ -160,7 +147,7 @@ fun Application.configureEventLogging() = launch {
                 b.append(if (it.isSet) "被设置为" else "被取消")
                 b.append("管理员")
 
-                logAsMessage { b.toString() }
+                logger.d { b.toString() }
             }
 
             is GroupEssenceMessageChangeEvent -> {
@@ -172,11 +159,11 @@ fun Application.configureEventLogging() = launch {
                 b.append(if (it.isSet) "被设置为" else "被取消")
                 b.append("精华消息")
 
-                logAsMessage { b.toString() }
+                logger.d { b.toString() }
             }
 
             is GroupInvitationEvent -> {
-                logAsMessage { "${it.initiatorUin} 邀请自己加入群 ${it.groupUin}" }
+                logger.d { "${it.initiatorUin} 邀请自己加入群 ${it.groupUin}" }
             }
 
             is GroupInvitedJoinRequestEvent -> {
@@ -188,7 +175,7 @@ fun Application.configureEventLogging() = launch {
                 b.append("[${initiator.displayString}] ")
                 b.append("邀请 ${it.targetUserUin} 加入群聊")
 
-                logAsMessage { b.toString() }
+                logger.d { b.toString() }
             }
 
             is GroupJoinRequestEvent -> {
@@ -198,7 +185,7 @@ fun Application.configureEventLogging() = launch {
                 b.append("[${group.displayString}] ")
                 b.append("收到 ${it.initiatorUin} 的入群申请，附加信息：${it.comment} ")
 
-                logAsMessage { b.toString() }
+                logger.d { b.toString() }
             }
 
             is GroupMemberIncreaseEvent -> {
@@ -224,7 +211,7 @@ fun Application.configureEventLogging() = launch {
                     }
                 }
 
-                logAsMessage { b.toString() }
+                logger.d { b.toString() }
             }
 
             is GroupMemberDecreaseEvent -> {
@@ -241,7 +228,7 @@ fun Application.configureEventLogging() = launch {
                     b.append("退出了群聊")
                 }
 
-                logAsMessage { b.toString() }
+                logger.d { b.toString() }
             }
 
             is GroupNameChangeEvent -> {
@@ -253,7 +240,7 @@ fun Application.configureEventLogging() = launch {
                 b.append("[${operator.displayString}] ")
                 b.append("将群名称修改为：${it.newGroupName}")
 
-                logAsMessage { b.toString() }
+                logger.d { b.toString() }
             }
 
             is GroupMessageReactionEvent -> {
@@ -273,7 +260,7 @@ fun Application.configureEventLogging() = launch {
                 b.append(" ")
                 b.append(bot.faceDetailMap[it.faceId]?.qDes ?: it.faceId)
 
-                logAsMessage { b.toString() }
+                logger.d { b.toString() }
             }
 
             is GroupMuteEvent -> {
@@ -291,7 +278,7 @@ fun Application.configureEventLogging() = launch {
                     b.append("被 [${operator.displayString}] 禁言 ${it.duration} 秒")
                 }
 
-                logAsMessage { b.toString() }
+                logger.d { b.toString() }
             }
 
             is GroupWholeMuteEvent -> {
@@ -308,7 +295,7 @@ fun Application.configureEventLogging() = launch {
                     b.append("关闭了全员禁言")
                 }
 
-                logAsMessage { b.toString() }
+                logger.d { b.toString() }
             }
 
             is GroupNudgeEvent -> {
@@ -337,7 +324,7 @@ fun Application.configureEventLogging() = launch {
                 }
                 b.append(it.displaySuffix)
 
-                logAsMessage { b.toString() }
+                logger.d { b.toString() }
             }
         }
     }
