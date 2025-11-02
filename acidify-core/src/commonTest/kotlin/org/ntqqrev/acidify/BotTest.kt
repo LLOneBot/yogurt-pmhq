@@ -2,6 +2,7 @@
 
 package org.ntqqrev.acidify
 
+import com.github.ajalt.mordant.terminal.Terminal
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.launch
@@ -35,7 +36,7 @@ class BotTest {
         signProvider = defaultSignProvider,
         scope = defaultScope,
         minLogLevel = LogLevel.VERBOSE,
-        logHandler = SimpleColoredLogHandler,
+        logHandler = SimpleColoredLogHandler(Terminal()),
     )
 
     init {

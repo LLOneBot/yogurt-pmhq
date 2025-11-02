@@ -11,8 +11,9 @@ import org.ntqqrev.acidify.entity.BotGroupMember
 import org.ntqqrev.acidify.event.*
 import org.ntqqrev.acidify.message.MessageScene
 import org.ntqqrev.acidify.util.log.LogHandler
+import org.ntqqrev.yogurt.YogurtApp
 
-expect val logHandler: LogHandler
+expect val YogurtApp.logHandler: LogHandler
 
 private val BotFriend.displayName
     get() = remark.ifBlank { nickname }

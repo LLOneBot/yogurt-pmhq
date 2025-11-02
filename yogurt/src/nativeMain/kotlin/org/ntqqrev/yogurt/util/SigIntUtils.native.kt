@@ -3,7 +3,6 @@ package org.ntqqrev.yogurt.util
 import io.ktor.server.engine.*
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.staticCFunction
-import org.ntqqrev.yogurt.t
 import platform.posix.SIGINT
 import platform.posix.signal
 
@@ -17,7 +16,7 @@ actual fun EmbeddedServer<*, *>.configureSigIntHandler() {
     }
     globalServer = this
     signal(SIGINT, staticCFunction { _: Int ->
-        t.println("SIGINT received, shutting down...")
+        println("SIGINT received, shutting down...")
         globalServer?.stop(gracePeriodMillis = 5000L, timeoutMillis = 10_000L)
         return@staticCFunction
     })

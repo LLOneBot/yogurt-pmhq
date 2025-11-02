@@ -4,7 +4,7 @@ plugins {
 }
 
 application {
-    mainClass = "org.ntqqrev.yogurt.Main"
+    mainClass = "JvmMain"
 }
 
 dependencies {

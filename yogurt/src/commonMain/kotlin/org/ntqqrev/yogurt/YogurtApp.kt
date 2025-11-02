@@ -2,6 +2,8 @@
 
 package org.ntqqrev.yogurt
 
+import com.github.ajalt.mordant.rendering.TextColors
+import com.github.ajalt.mordant.terminal.Terminal
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.*
 import io.ktor.serialization.kotlinx.json.*
@@ -14,6 +16,7 @@ import io.ktor.server.plugins.di.*
 import io.ktor.server.routing.*
 import io.ktor.server.sse.*
 import io.ktor.server.websocket.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.io.buffered
@@ -27,6 +30,8 @@ import org.ntqqrev.acidify.common.AppInfo
 import org.ntqqrev.acidify.common.SessionStore
 import org.ntqqrev.acidify.util.UrlSignProvider
 import org.ntqqrev.milky.milkyJsonModule
+import org.ntqqrev.milky.milkyPackageVersion
+import org.ntqqrev.milky.milkyVersion
 import org.ntqqrev.yogurt.api.configureMilkyApiAuth
 import org.ntqqrev.yogurt.api.configureMilkyApiHttpRoutes
 import org.ntqqrev.yogurt.api.configureMilkyApiLoginProtect
@@ -39,12 +44,47 @@ import org.ntqqrev.yogurt.util.*
 object YogurtApp {
     val config = YogurtConfig.loadFromFile()
     val qrCodePath = Path("qrcode.png")
+    val t = Terminal()
 
     fun createServer() = embeddedServer(
         factory = CIO,
         port = config.httpConfig.port,
         host = config.httpConfig.host
     ) {
+        t.println("""
+            | Starting ${BuildKonfig.name} v${BuildKonfig.version}
+            | .--------------------------------------.
+            | |   __  __                       __    |
+            | |   \ \/ /___  ____ ___  _______/ /_   |
+            | |    \  / __ \/ __ `/ / / / ___/ __/   |
+            | |    / / /_/ / /_/ / /_/ / /  / /_     |
+            | |   /_/\____/\__, /\__,_/_/   \__/     |
+            | |           /____/   Acidify + Milky   |
+            | '--------------------------------------'
+            | Commit Hash:    ${BuildKonfig.commitHash}
+            | Milky Version:  $milkyVersion+@saltify/milky-types@$milkyPackageVersion
+            | Build Time:     ${BuildKonfig.buildTime}
+            | Data Directory: ${SystemFileSystem.resolve(Path("."))}
+        """.trimMargin())
+
+        if (
+            !config.skipSecurityCheck &&
+            config.httpConfig.host == "0.0.0.0" &&
+            config.httpConfig.accessToken.isEmpty() &&
+            !isDockerEnv
+        ) {
+            t.println(
+                TextColors.brightYellow("""
+                    |警告：你可能正在将 Yogurt 的 Milky 服务暴露在公网环境下，且未设置 accessToken。
+                    |这可能导致你的 QQ 账号被他人恶意使用，造成损失。
+                    |请在设置中配置 accessToken，或将 host 设置为 127.0.0.1 或其他内网 IP 地址。
+                    |如果你明确知道自己在做什么，可以在配置文件中将 skipSecurityCheck 设置为 true 以跳过此检查。
+                    |程序将在 10 秒后继续运行...
+                """.trimMargin())
+            )
+            delay(10_000)
+        }
+
         val signProvider = UrlSignProvider(config.signApiUrl)
         val sessionStore: SessionStore = if (SystemFileSystem.exists(sessionStorePath)) {
             SystemFileSystem.source(sessionStorePath).buffered().use {
