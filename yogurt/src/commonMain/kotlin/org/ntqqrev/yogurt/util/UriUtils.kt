@@ -1,5 +1,6 @@
 package org.ntqqrev.yogurt.util
 
+import io.ktor.client.HttpClient
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
@@ -10,10 +11,9 @@ import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.readByteArray
-import org.ntqqrev.acidify.util.createHttpClient
 import kotlin.io.encoding.Base64
 
-val httpClient = createHttpClient()
+val httpClient = HttpClient()
 
 suspend fun resolveUri(uri: String): ByteArray = withContext(Dispatchers.IO) {
     when {

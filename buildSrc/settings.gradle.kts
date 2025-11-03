@@ -4,7 +4,6 @@ dependencyResolutionManagement {
     @Suppress("UnstableApiUsage")
     repositories {
         mavenCentral()
-        maven("https://maven.covers1624.net/")
     }
 
     // Reuse the version catalog from the main build.

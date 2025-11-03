@@ -3,12 +3,12 @@
 package org.ntqqrev.acidify.internal.context
 
 import co.touchlab.stately.collections.ConcurrentMutableMap
+import io.ktor.client.HttpClient
 import io.ktor.client.plugins.cookies.*
 import io.ktor.client.request.*
 import org.ntqqrev.acidify.internal.LagrangeClient
 import org.ntqqrev.acidify.internal.service.system.FetchClientKey
 import org.ntqqrev.acidify.internal.service.system.FetchPSKey
-import org.ntqqrev.acidify.util.createHttpClient
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
@@ -34,7 +34,7 @@ internal class TicketContext(client: LagrangeClient) : AbstractContext(client) {
 
     private val currentSKey = KeyWithLifetime.dummy()
     private val psKeyCache = ConcurrentMutableMap<String, KeyWithLifetime>()
-    private val httpClient = createHttpClient {
+    private val httpClient = HttpClient {
         install(HttpCookies)
     }
 

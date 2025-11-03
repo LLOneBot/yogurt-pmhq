@@ -14,13 +14,12 @@ import org.ntqqrev.acidify.internal.util.toIpString
 import org.ntqqrev.acidify.message.MessageScene
 import org.ntqqrev.acidify.pb.PbObject
 import org.ntqqrev.acidify.pb.invoke
-import org.ntqqrev.acidify.util.createHttpClient
 
 internal class HighwayContext(client: LagrangeClient) : AbstractContext(client) {
     private var highwayHost: String = ""
     private var highwayPort: Int = 0
     private var sigSession: ByteArray = ByteArray(0)
-    private val httpClient = createHttpClient()
+    private val httpClient = HttpClient()
     private val logger = client.createLogger(this)
 
     companion object {

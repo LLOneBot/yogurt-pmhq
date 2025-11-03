@@ -23,7 +23,6 @@ internal class LagrangeClient(
     val packetContext = PacketContext(this)
     val ticketContext = TicketContext(this)
     val highwayContext = HighwayContext(this)
-    val flashTransferContext = FlashTransferContext(this)
     val pushChannel = Channel<SsoResponse>(capacity = 15, onBufferOverflow = BufferOverflow.DROP_OLDEST)
     val sendPacketDefaultTimeout = 10_000L
     val contextCollection = listOf(
@@ -31,7 +30,6 @@ internal class LagrangeClient(
         packetContext,
         ticketContext,
         highwayContext,
-        flashTransferContext
     )
 
     suspend fun doPostOnlineLogic() {

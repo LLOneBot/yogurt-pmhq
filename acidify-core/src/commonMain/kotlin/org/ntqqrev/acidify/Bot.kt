@@ -1,6 +1,7 @@
 package org.ntqqrev.acidify
 
 import co.touchlab.stately.collections.ConcurrentMutableMap
+import io.ktor.client.HttpClient
 import io.ktor.client.call.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
@@ -49,7 +50,6 @@ import org.ntqqrev.acidify.struct.BotFriendRequest.Companion.parseFilteredFriend
 import org.ntqqrev.acidify.struct.BotFriendRequest.Companion.parseFriendRequest
 import org.ntqqrev.acidify.util.CacheUtility
 import org.ntqqrev.acidify.util.HtmlEntities
-import org.ntqqrev.acidify.util.createHttpClient
 import org.ntqqrev.acidify.util.log.LogHandler
 import org.ntqqrev.acidify.util.log.LogLevel
 import org.ntqqrev.acidify.util.log.LogMessage
@@ -147,7 +147,7 @@ class Bot(
     /**
      * HTTP 客户端实例，可用于发起自定义的 HTTP 请求。
      */
-    val httpClient = createHttpClient {
+    val httpClient = HttpClient {
         install(ContentNegotiation) {
             json(Json { ignoreUnknownKeys = true })
         }
@@ -379,7 +379,8 @@ class Bot(
      * @param groupUin 群号
      * @param forceUpdate 是否强制更新缓存
      */
-    suspend fun getGroupMembers(groupUin: Long, forceUpdate: Boolean = false) = getGroup(groupUin)?.getMembers(forceUpdate)
+    suspend fun getGroupMembers(groupUin: Long, forceUpdate: Boolean = false) =
+        getGroup(groupUin)?.getMembers(forceUpdate)
 
     /**
      * 根据 uin 获取指定群的群成员实体。
