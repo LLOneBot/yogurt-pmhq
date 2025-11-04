@@ -6,7 +6,7 @@ import kotlin.experimental.xor
  * Core AES implementation with fundamental cryptographic operations.
  * Direct translation from aes_core.hpp
  */
-object AesCore {
+internal object AesCore {
 
     // AES block size is always 128 bits (16 bytes)
     const val AES_BLOCK_SIZE: Int = 16

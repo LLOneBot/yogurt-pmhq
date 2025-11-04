@@ -4,7 +4,7 @@ package org.ntqqrev.acidify.internal.crypto.hash
  * SHA-256 hash algorithm implementation
  * Produces 256-bit (32 byte) hash values
  */
-object SHA256 {
+internal object SHA256 {
     const val BLOCK_SIZE = 64  // 512 bits
     const val DIGEST_SIZE = 32 // 256 bits
 

@@ -4,7 +4,7 @@ package org.ntqqrev.acidify.internal.crypto.hash
  * MD5 hash algorithm implementation
  * Produces 128-bit (16 byte) hash values
  */
-object MD5 {
+internal object MD5 {
     const val BLOCK_SIZE = 64  // 512 bits
     const val DIGEST_SIZE = 16 // 128 bits
 
@@ -175,7 +175,7 @@ object MD5 {
 /**
  * HMAC-MD5 implementation
  */
-object HMACMD5 {
+internal object HMACMD5 {
     private const val BLOCK_SIZE = MD5.BLOCK_SIZE
     private const val IPAD: Byte = 0x36
     private const val OPAD: Byte = 0x5c

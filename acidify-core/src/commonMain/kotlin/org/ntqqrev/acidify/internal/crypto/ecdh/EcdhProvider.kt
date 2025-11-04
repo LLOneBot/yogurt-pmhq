@@ -8,7 +8,7 @@ import kotlin.random.Random
 /**
  * ECDH (Elliptic Curve Diffie-Hellman) key exchange provider
  */
-class EcdhProvider {
+internal class EcdhProvider {
     private val curve: EllipticCurve
     private val secret: BigInt
     val publicPoint: EllipticPoint

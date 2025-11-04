@@ -5,7 +5,7 @@ import org.ntqqrev.acidify.internal.multiprecision.BigInt
 /**
  * Elliptic curve point in affine coordinates
  */
-data class EllipticPoint(
+internal data class EllipticPoint(
     val x: BigInt,
     val y: BigInt
 ) {

@@ -1,6 +1,6 @@
 package org.ntqqrev.acidify.internal.crypto.hash
 
-class SHA1Stream {
+internal class SHA1Stream {
     private val state = IntArray(5)
     private val count = IntArray(2)
     private val buffer = ByteArray(Sha1BlockSize)

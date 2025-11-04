@@ -6,7 +6,7 @@ import org.ntqqrev.acidify.internal.multiprecision.ModularOps
 /**
  * Elliptic curve parameters for y^2 = x^3 + ax + b (mod p)
  */
-data class EllipticCurve(
+internal data class EllipticCurve(
     val p: BigInt,           // Prime modulus
     val a: BigInt,           // Curve parameter a
     val b: BigInt,           // Curve parameter b

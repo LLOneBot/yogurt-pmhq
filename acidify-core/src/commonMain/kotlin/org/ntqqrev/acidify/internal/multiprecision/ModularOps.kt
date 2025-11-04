@@ -3,7 +3,7 @@ package org.ntqqrev.acidify.internal.multiprecision
 /**
  * Montgomery form representation for fast modular arithmetic
  */
-class MontgomeryForm(private val modulus: BigInt) {
+internal class MontgomeryForm(private val modulus: BigInt) {
     private val r: BigInt        // R = 2^k where k = bit_length(modulus)
     private val rInv: BigInt      // R^(-1) mod modulus
     private val r2: BigInt        // R^2 mod modulus
@@ -87,7 +87,7 @@ class MontgomeryForm(private val modulus: BigInt) {
 /**
  * Barrett reduction for fast modular reduction
  */
-class BarrettReduction(private val modulus: BigInt) {
+internal class BarrettReduction(private val modulus: BigInt) {
     private val mu: BigInt        // Precomputed value for reduction
     private val k: Int            // k = ceil(log2(modulus))
 
@@ -143,7 +143,7 @@ class BarrettReduction(private val modulus: BigInt) {
 /**
  * Main modular arithmetic operations
  */
-object ModularOps {
+internal object ModularOps {
 
     // Basic modular operations
     fun modAdd(a: BigInt, b: BigInt, mod: BigInt): BigInt {

@@ -8,13 +8,13 @@ import org.ntqqrev.acidify.internal.protobuf.util.encodeVarintToSink
 import org.ntqqrev.acidify.internal.protobuf.util.readVarint32
 import org.ntqqrev.acidify.internal.protobuf.util.readVarint64
 
-abstract class PbType<T>(val fieldNumber: Int) {
+internal abstract class PbType<T>(val fieldNumber: Int) {
     internal abstract fun encode(value: T): MutableList<DataToken>
     internal abstract fun decode(tokens: List<DataToken>): T
     internal abstract val defaultValue: T
 }
 
-class PbInt32(fieldNumber: Int) : PbType<Int>(fieldNumber) {
+internal class PbInt32(fieldNumber: Int) : PbType<Int>(fieldNumber) {
     override fun encode(value: Int): MutableList<DataToken> {
         return mutableListOf(Varint(value.toLong()))
     }
@@ -30,7 +30,7 @@ class PbInt32(fieldNumber: Int) : PbType<Int>(fieldNumber) {
     }
 }
 
-class PbRepeatedInt32(
+internal class PbRepeatedInt32(
     fieldNumber: Int,
     val encodePacked: Boolean = true
 ) : PbType<List<Int>>(fieldNumber) {
@@ -71,7 +71,7 @@ class PbRepeatedInt32(
     }
 }
 
-class PbInt64(fieldNumber: Int) : PbType<Long>(fieldNumber) {
+internal class PbInt64(fieldNumber: Int) : PbType<Long>(fieldNumber) {
     override fun encode(value: Long): MutableList<DataToken> {
         return mutableListOf(Varint(value))
     }
@@ -87,7 +87,7 @@ class PbInt64(fieldNumber: Int) : PbType<Long>(fieldNumber) {
     }
 }
 
-class PbRepeatedInt64(
+internal class PbRepeatedInt64(
     fieldNumber: Int,
     val encodePacked: Boolean = true
 ) : PbType<List<Long>>(fieldNumber) {
@@ -128,7 +128,7 @@ class PbRepeatedInt64(
     }
 }
 
-class PbBoolean(fieldNumber: Int) : PbType<Boolean>(fieldNumber) {
+internal class PbBoolean(fieldNumber: Int) : PbType<Boolean>(fieldNumber) {
     override fun encode(value: Boolean): MutableList<DataToken> {
         return mutableListOf(Varint(if (value) 1L else 0L))
     }
@@ -145,7 +145,7 @@ class PbBoolean(fieldNumber: Int) : PbType<Boolean>(fieldNumber) {
     }
 }
 
-class PbBytes(fieldNumber: Int) : PbType<ByteArray>(fieldNumber) {
+internal class PbBytes(fieldNumber: Int) : PbType<ByteArray>(fieldNumber) {
     override fun encode(value: ByteArray): MutableList<DataToken> {
         return mutableListOf(LengthDelimited(value))
     }
@@ -161,7 +161,7 @@ class PbBytes(fieldNumber: Int) : PbType<ByteArray>(fieldNumber) {
     }
 }
 
-class PbRepeatedBytes(fieldNumber: Int) : PbType<List<ByteArray>>(fieldNumber) {
+internal class PbRepeatedBytes(fieldNumber: Int) : PbType<List<ByteArray>>(fieldNumber) {
     override fun encode(value: List<ByteArray>): MutableList<DataToken> {
         return value.map { bytes -> LengthDelimited(bytes) }.toMutableList()
     }
@@ -177,7 +177,7 @@ class PbRepeatedBytes(fieldNumber: Int) : PbType<List<ByteArray>>(fieldNumber) {
     }
 }
 
-class PbString(fieldNumber: Int) : PbType<String>(fieldNumber) {
+internal class PbString(fieldNumber: Int) : PbType<String>(fieldNumber) {
     override fun encode(value: String): MutableList<DataToken> {
         return mutableListOf(LengthDelimited(value.encodeToByteArray()))
     }
@@ -194,7 +194,7 @@ class PbString(fieldNumber: Int) : PbType<String>(fieldNumber) {
     }
 }
 
-class PbRepeatedString(fieldNumber: Int) : PbType<List<String>>(fieldNumber) {
+internal class PbRepeatedString(fieldNumber: Int) : PbType<List<String>>(fieldNumber) {
     override fun encode(value: List<String>): MutableList<DataToken> {
         return value.map { str -> LengthDelimited(str.encodeToByteArray()) }.toMutableList()
     }
@@ -210,7 +210,7 @@ class PbRepeatedString(fieldNumber: Int) : PbType<List<String>>(fieldNumber) {
     }
 }
 
-class PbMessage<S : PbSchema>(fieldNumber: Int, val schema: S) : PbType<PbObject<S>>(fieldNumber) {
+internal class PbMessage<S : PbSchema>(fieldNumber: Int, val schema: S) : PbType<PbObject<S>>(fieldNumber) {
     override fun encode(value: PbObject<S>): MutableList<DataToken> {
         val byteArray = value.tokens.encodeToBuffer().readByteArray()
         return mutableListOf(LengthDelimited(byteArray))
@@ -224,9 +224,9 @@ class PbMessage<S : PbSchema>(fieldNumber: Int, val schema: S) : PbType<PbObject
     override val defaultValue: PbObject<S> = PbObject(schema) { }
 }
 
-operator fun <S : PbSchema> S.get(fieldNumber: Int) = PbMessage(fieldNumber, this)
+internal operator fun <S : PbSchema> S.get(fieldNumber: Int) = PbMessage(fieldNumber, this)
 
-class PbRepeatedMessage<S : PbSchema>(fieldNumber: Int, val schema: S) : PbType<List<PbObject<S>>>(fieldNumber) {
+internal class PbRepeatedMessage<S : PbSchema>(fieldNumber: Int, val schema: S) : PbType<List<PbObject<S>>>(fieldNumber) {
     override fun encode(value: List<PbObject<S>>): MutableList<DataToken> {
         return value.map { obj ->
             val byteArray = obj.tokens.encodeToBuffer().readByteArray()
@@ -244,11 +244,11 @@ class PbRepeatedMessage<S : PbSchema>(fieldNumber: Int, val schema: S) : PbType<
     override val defaultValue: List<PbObject<S>> = emptyList()
 }
 
-object PbRepeated {
+internal object PbRepeated {
     operator fun <S : PbSchema> get(pbMsg: PbMessage<S>) = PbRepeatedMessage(pbMsg.fieldNumber, pbMsg.schema)
 }
 
-class PbFixed32(fieldNumber: Int) : PbType<Int>(fieldNumber) {
+internal class PbFixed32(fieldNumber: Int) : PbType<Int>(fieldNumber) {
     override fun encode(value: Int): MutableList<DataToken> {
         return mutableListOf(Fixed32(value))
     }
@@ -265,7 +265,7 @@ class PbFixed32(fieldNumber: Int) : PbType<Int>(fieldNumber) {
     }
 }
 
-class PbFixed64(fieldNumber: Int) : PbType<Long>(fieldNumber) {
+internal class PbFixed64(fieldNumber: Int) : PbType<Long>(fieldNumber) {
     override fun encode(value: Long): MutableList<DataToken> {
         return mutableListOf(Fixed64(value))
     }
@@ -282,7 +282,7 @@ class PbFixed64(fieldNumber: Int) : PbType<Long>(fieldNumber) {
     }
 }
 
-class PbOptional<T>(private val wrapped: PbType<T>) : PbType<T?>(wrapped.fieldNumber) {
+internal class PbOptional<T>(private val wrapped: PbType<T>) : PbType<T?>(wrapped.fieldNumber) {
     override fun encode(value: T?): MutableList<DataToken> {
         return if (value == null) {
             mutableListOf()

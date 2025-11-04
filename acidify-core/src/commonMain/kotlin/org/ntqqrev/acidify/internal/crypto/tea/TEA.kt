@@ -2,7 +2,7 @@ package org.ntqqrev.acidify.internal.crypto.tea
 
 import kotlin.random.Random
 
-object TeaProvider {
+internal object TeaProvider {
     /**
      * Get the cipher length for given data size
      * @param dataSize Size of data to encrypt

@@ -9,7 +9,7 @@ import org.ntqqrev.acidify.internal.protobuf.util.multiMapOf
 import org.ntqqrev.acidify.internal.protobuf.util.readTokens
 import kotlin.jvm.JvmField
 
-class PbObject<S : PbSchema>(
+internal class PbObject<S : PbSchema>(
     @JvmField val schema: S,
     @JvmField internal val tokens: MultiMap<Int, DataToken> = multiMapOf()
 ) {
@@ -50,7 +50,7 @@ class PbObject<S : PbSchema>(
     }
 }
 
-inline fun <S : PbSchema> PbObject(schema: S, block: S.(PbObject<S>) -> Unit): PbObject<S> {
+internal inline fun <S : PbSchema> PbObject(schema: S, block: S.(PbObject<S>) -> Unit): PbObject<S> {
     val obj = PbObject(schema)
     schema.block(obj)
     return obj

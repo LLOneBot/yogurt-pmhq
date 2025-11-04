@@ -4,7 +4,7 @@ package org.ntqqrev.acidify.internal.crypto.ecdh
  * Main ECDH (Elliptic Curve Diffie-Hellman) cryptographic system
  * This module provides all necessary components for ECDH key exchange
  */
-object Ecdh {
+internal object Ecdh {
     /**
      * Convenience references for commonly used curves
      */

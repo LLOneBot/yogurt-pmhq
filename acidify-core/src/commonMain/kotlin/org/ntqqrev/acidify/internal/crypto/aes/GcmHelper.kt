@@ -6,7 +6,7 @@ import kotlin.experimental.xor
  * GCM (Galois/Counter Mode) implementation for authenticated encryption.
  * Direct translation from gcm.hpp
  */
-object GcmHelper {
+internal object GcmHelper {
 
     // GCM field size (128 bits)
     const val GCM_BLOCK_SIZE: Int = 16

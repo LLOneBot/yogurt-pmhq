@@ -13,7 +13,7 @@ import kotlin.random.Random
  */
 
 // Padding schemes
-enum class PaddingScheme {
+internal enum class PaddingScheme {
     NONE,     // No padding (data must be block-aligned)
     PKCS7,    // PKCS#7 padding
     ZEROS,    // Zero padding
@@ -21,7 +21,7 @@ enum class PaddingScheme {
 }
 
 // Apply padding to buffer
-fun applyPadding(buffer: ByteArray, dataLen: Int, scheme: PaddingScheme): Int {
+internal fun applyPadding(buffer: ByteArray, dataLen: Int, scheme: PaddingScheme): Int {
     if (scheme == PaddingScheme.NONE) {
         if (dataLen % AesCore.AES_BLOCK_SIZE != 0) {
             throw IllegalArgumentException("Data length must be multiple of block size with no padding")
@@ -65,7 +65,7 @@ fun applyPadding(buffer: ByteArray, dataLen: Int, scheme: PaddingScheme): Int {
 }
 
 // Remove padding from buffer
-fun removePadding(buffer: ByteArray, dataLen: Int, scheme: PaddingScheme): Int {
+internal fun removePadding(buffer: ByteArray, dataLen: Int, scheme: PaddingScheme): Int {
     if (scheme == PaddingScheme.NONE || dataLen == 0) {
         return dataLen
     }
@@ -115,7 +115,7 @@ fun removePadding(buffer: ByteArray, dataLen: Int, scheme: PaddingScheme): Int {
 }
 
 // ECB (Electronic Codebook) mode
-class ECB(key: ByteArray, private val paddingScheme: PaddingScheme = PaddingScheme.PKCS7) {
+internal class ECB(key: ByteArray, private val paddingScheme: PaddingScheme = PaddingScheme.PKCS7) {
     private val keySchedule = AesCore.KeySchedule()
 
     init {
@@ -154,7 +154,7 @@ class ECB(key: ByteArray, private val paddingScheme: PaddingScheme = PaddingSche
 }
 
 // CBC (Cipher Block Chaining) mode
-class CBC(
+internal class CBC(
     key: ByteArray,
     iv: ByteArray,
     private val paddingScheme: PaddingScheme = PaddingScheme.PKCS7
@@ -228,7 +228,7 @@ class CBC(
 }
 
 // CTR (Counter) mode
-class CTR(key: ByteArray, nonce: ByteArray) {
+internal class CTR(key: ByteArray, nonce: ByteArray) {
     private val keySchedule = AesCore.KeySchedule()
     private val counter = ByteArray(AesCore.AES_BLOCK_SIZE)
     private val keystream = ByteArray(AesCore.AES_BLOCK_SIZE)
@@ -302,7 +302,7 @@ class CTR(key: ByteArray, nonce: ByteArray) {
 }
 
 // GCM (Galois/Counter Mode) - Authenticated encryption
-class GCM(key: ByteArray, private val tagSize: GcmHelper.TagSize = GcmHelper.TagSize.TAG_128) {
+internal class GCM(key: ByteArray, private val tagSize: GcmHelper.TagSize = GcmHelper.TagSize.TAG_128) {
     private val ctx = GcmHelper.GCMContext()
 
     init {
@@ -387,12 +387,12 @@ class GCM(key: ByteArray, private val tagSize: GcmHelper.TagSize = GcmHelper.Tag
 }
 
 // Generate random IV/nonce
-fun generateRandomIv(size: Int = AesCore.AES_BLOCK_SIZE): ByteArray {
+internal fun generateRandomIv(size: Int = AesCore.AES_BLOCK_SIZE): ByteArray {
     return Random.nextBytes(size)
 }
 
 // Helper function to create AES cipher with automatic mode detection
-inline fun <reified T> createCipher(key: ByteArray, vararg args: Any): T where T : Any {
+internal inline fun <reified T> createCipher(key: ByteArray, vararg args: Any): T where T : Any {
     return when (T::class) {
         ECB::class -> ECB(key, args.getOrNull(0) as? PaddingScheme ?: PaddingScheme.PKCS7) as T
         CBC::class -> CBC(key, args[0] as ByteArray, args.getOrNull(1) as? PaddingScheme ?: PaddingScheme.PKCS7) as T

@@ -7,7 +7,7 @@ import kotlin.random.Random
  * AES algorithm interface combining all modes.
  * Direct translation from aes.hpp
  */
-class AES {
+internal class AES {
 
     // Key size enum
     enum class KeySize(val bytes: Int) {
@@ -157,21 +157,8 @@ class AES {
     }
 }
 
-// Convenience type aliases
-typealias AES128 = AES  // All modes support all key sizes
-typealias AES192 = AES
-typealias AES256 = AES
-
-// Mode-specific type aliases for clarity
-typealias AES_ECB = ECB
-typealias AES_CBC = CBC
-typealias AES_CTR = CTR
-typealias AES_GCM = GCM
-
-// Helper functions for common operations
-
 // Encrypt data with AES-GCM (recommended for most use cases)
-fun aesGcmEncrypt(
+internal fun aesGcmEncrypt(
     key: ByteArray,
     plaintext: ByteArray,
     iv: ByteArray,
@@ -182,7 +169,7 @@ fun aesGcmEncrypt(
 }
 
 // Decrypt data with AES-GCM
-fun aesGcmDecrypt(
+internal fun aesGcmDecrypt(
     key: ByteArray,
     ciphertext: ByteArray,
     iv: ByteArray,
@@ -193,7 +180,7 @@ fun aesGcmDecrypt(
 }
 
 // Simple CTR mode encryption (streaming cipher)
-fun aesCtrEncrypt(
+internal fun aesCtrEncrypt(
     key: ByteArray,
     plaintext: ByteArray,
     nonce: ByteArray
@@ -203,7 +190,7 @@ fun aesCtrEncrypt(
 }
 
 // Simple CTR mode decryption
-fun aesCtrDecrypt(
+internal fun aesCtrDecrypt(
     key: ByteArray,
     ciphertext: ByteArray,
     nonce: ByteArray
@@ -213,7 +200,7 @@ fun aesCtrDecrypt(
 }
 
 // CBC mode with automatic IV generation
-fun aesCbcEncryptWithIv(
+internal fun aesCbcEncryptWithIv(
     key: ByteArray,
     plaintext: ByteArray,
     padding: PaddingScheme = PaddingScheme.PKCS7
@@ -225,7 +212,7 @@ fun aesCbcEncryptWithIv(
 }
 
 // Base64 encoding/decoding utilities
-fun bytesToBase64(bytes: ByteArray): String {
+internal fun bytesToBase64(bytes: ByteArray): String {
     val base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
     val result = StringBuilder(((bytes.size + 2) / 3) * 4)
 
@@ -245,7 +232,7 @@ fun bytesToBase64(bytes: ByteArray): String {
     return result.toString()
 }
 
-fun base64ToBytes(base64: String): ByteArray {
+internal fun base64ToBytes(base64: String): ByteArray {
     val decodeTable = intArrayOf(
         64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
         64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,

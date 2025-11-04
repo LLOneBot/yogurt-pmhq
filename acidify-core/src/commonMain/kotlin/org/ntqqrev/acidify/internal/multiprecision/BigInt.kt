@@ -80,7 +80,7 @@ internal class PoolAllocation(words: Int) {
 /**
  * Main BigInteger class
  */
-class BigInt : Comparable<BigInt> {
+internal class BigInt : Comparable<BigInt> {
     private var words: MutableList<Word>  // Little-endian storage (least significant word first)
     private var negative: Boolean = false  // Sign flag
 
