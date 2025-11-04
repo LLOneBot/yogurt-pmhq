@@ -18,6 +18,7 @@ stately = "2.1.0"
 mordant = "3.0.2"
 logback = "1.5.18"
 build-konfig = "0.17.1"
+maven-publish = "0.34.0"
 
 [libraries]
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
@@ -82,3 +83,4 @@ kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", versi
 kotlinx-atomicfu = { id = "org.jetbrains.kotlinx.atomicfu", version.ref = "kx-atomicfu" }
 ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
 build-konfig = { id = "com.codingfeline.buildkonfig", version.ref = "build-konfig" }
+maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "maven-publish" }

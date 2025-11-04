@@ -1,7 +1,8 @@
 plugins {
     id("buildsrc.convention.kotlin-multiplatform")
     alias(libs.plugins.kotlin.serialization)
-    id("com.vanniktech.maven.publish") version "0.34.0"
+    alias(libs.plugins.kotlinx.atomicfu)
+    alias(libs.plugins.maven.publish)
 }
 
 group = "org.ntqqrev"
