@@ -42,6 +42,7 @@ import org.ntqqrev.acidify.internal.service.system.*
 import org.ntqqrev.acidify.internal.util.md5
 import org.ntqqrev.acidify.internal.util.sha1
 import org.ntqqrev.acidify.internal.util.triSha1
+import org.ntqqrev.acidify.internal.util.unescapeHttp
 import org.ntqqrev.acidify.logging.LogHandler
 import org.ntqqrev.acidify.logging.LogLevel
 import org.ntqqrev.acidify.logging.LogMessage
@@ -943,7 +944,7 @@ class Bot(
                 announcementId = feed.noticeId,
                 senderId = feed.senderId,
                 time = feed.publishTime,
-                content = HtmlEntities.unescape(feed.message.text),
+                content = feed.message.text.unescapeHttp(),
                 imageUrl = feed.message.images.firstOrNull()?.let {
                     "https://gdynamic.qpic.cn/gdynamic/${it.id}/0"
                 }
