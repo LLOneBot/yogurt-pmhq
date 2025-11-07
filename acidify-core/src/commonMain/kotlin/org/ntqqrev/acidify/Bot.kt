@@ -553,7 +553,8 @@ class Bot(
      * @param sequence 消息序列号
      */
     suspend fun recallGroupMessage(groupUin: Long, sequence: Long) = client.callService(
-        RecallGroupMessage, RecallGroupMessage.Req(
+        RecallGroupMessage,
+        RecallGroupMessage.Req(
             groupUin = groupUin, sequence = sequence
         )
     )
@@ -654,7 +655,8 @@ class Bot(
      * @return 转发消息列表
      */
     suspend fun getForwardedMessages(resId: String): List<BotForwardedMessage> {
-        return client.callService(RecvLongMsg, RecvLongMsg.Req(resId)).mapNotNull { parseForwardedMessage(it) }
+        return client.callService(RecvLongMsg, RecvLongMsg.Req(resId))
+            .mapNotNull { parseForwardedMessage(it) }
     }
 
     /**
@@ -701,11 +703,11 @@ class Bot(
      * @param isSelf 是否戳自己（默认为 false）
      */
     suspend fun sendFriendNudge(
-        friendUin: Long, isSelf: Boolean = false
+        friendUin: Long,
+        isSelf: Boolean = false
     ) = client.callService(
-        SendFriendNudge, SendFriendNudge.Req(
-            friendUin = friendUin, isSelf = isSelf
-        )
+        SendFriendNudge,
+        SendFriendNudge.Req(friendUin, isSelf)
     )
 
     /**
@@ -714,11 +716,11 @@ class Bot(
      * @param count 点赞次数（默认为 1）
      */
     suspend fun sendProfileLike(
-        friendUin: Long, count: Int = 1
+        friendUin: Long,
+        count: Int = 1
     ) = client.callService(
-        SendProfileLike, SendProfileLike.Req(
-            targetUid = getUidByUin(friendUin), count = count
-        )
+        SendProfileLike,
+        SendProfileLike.Req(getUidByUin(friendUin), count)
     )
 
     /**
@@ -728,14 +730,12 @@ class Bot(
      * @return 好友请求列表
      */
     suspend fun getFriendRequests(isFiltered: Boolean = false, limit: Int = 20): List<BotFriendRequest> {
-        if (isFiltered) {
-            return client.callService(FetchFriendRequests.Filtered, limit).map {
-                parseFilteredFriendRequest(it)
-            }
+        return if (isFiltered) {
+            client.callService(FetchFriendRequests.Filtered, limit)
+                .map { parseFilteredFriendRequest(it) }
         } else {
-            return client.callService(FetchFriendRequests.Normal, limit).map {
-                parseFriendRequest(it)
-            }
+            client.callService(FetchFriendRequests.Normal, limit)
+                .map { parseFriendRequest(it) }
         }
     }
 
@@ -753,10 +753,7 @@ class Bot(
         } else {
             client.callService(
                 SetNormalFriendRequest,
-                SetNormalFriendRequest.Req(
-                    targetUid = initiatorUid,
-                    accept = accept
-                )
+                SetNormalFriendRequest.Req(initiatorUid, accept)
             )
         }
     }
@@ -771,10 +768,7 @@ class Bot(
         groupName: String
     ) = client.callService(
         SetGroupName,
-        SetGroupName.Req(
-            groupUin = groupUin,
-            groupName = groupName
-        )
+        SetGroupName.Req(groupUin, groupName)
     )
 
     /**
@@ -1051,16 +1045,14 @@ class Bot(
         sequence: Long,
         isSet: Boolean
     ) {
-        val random = getGroupHistoryMessages(groupUin, 1, sequence).messages.firstOrNull()
+        val random = getGroupHistoryMessages(groupUin, 1, sequence)
+            .messages
+            .firstOrNull()
             ?.random
             ?: throw IllegalStateException("消息不存在，无法获取 random 字段")
         client.callService(
             if (isSet) SetGroupEssenceMessage.Set else SetGroupEssenceMessage.Unset,
-            SetGroupEssenceMessage.Req(
-                groupUin = groupUin,
-                sequence = sequence,
-                random = random
-            )
+            SetGroupEssenceMessage.Req(groupUin, sequence, random)
         )
     }
 
@@ -1070,9 +1062,7 @@ class Bot(
      */
     suspend fun quitGroup(groupUin: Long) = client.callService(
         QuitGroup,
-        QuitGroup.Req(
-            groupUin = groupUin
-        )
+        QuitGroup.Req(groupUin)
     )
 
     /**
@@ -1107,10 +1097,7 @@ class Bot(
         targetUin: Long
     ) = client.callService(
         SendGroupNudge,
-        SendGroupNudge.Req(
-            groupUin = groupUin,
-            targetUin = targetUin
-        )
+        SendGroupNudge.Req(groupUin, targetUin)
     )
 
     /**
@@ -1127,10 +1114,7 @@ class Bot(
     ): Pair<List<BotGroupNotification>, Long?> {
         val resp = client.callService(
             if (isFiltered) FetchGroupNotifications.Filtered else FetchGroupNotifications.Normal,
-            FetchGroupNotifications.Req(
-                startSequence = startSequence ?: 0,
-                count = count
-            )
+            FetchGroupNotifications.Req(startSequence ?: 0, count)
         )
         val notifications = resp.notifications.mapNotNull {
             with(BotGroupNotification) { parseNotification(it, isFiltered) }
@@ -1199,7 +1183,10 @@ class Bot(
      * @return 文件 ID
      */
     suspend fun uploadGroupFile(
-        groupUin: Long, fileName: String, fileData: ByteArray, parentFolderId: String = "/"
+        groupUin: Long,
+        fileName: String,
+        fileData: ByteArray,
+        parentFolderId: String = "/"
     ): String {
         val uploadResp = client.callService(
             UploadGroupFile, UploadGroupFile.Req(
@@ -1245,7 +1232,9 @@ class Bot(
      * @return 文件 ID
      */
     suspend fun uploadPrivateFile(
-        friendUin: Long, fileName: String, fileData: ByteArray
+        friendUin: Long,
+        fileName: String,
+        fileData: ByteArray
     ): String {
         val friendUid = getUidByUin(friendUin)
         val fileMd5 = fileData.md5()
@@ -1329,10 +1318,7 @@ class Bot(
         fileId: String
     ): String = client.callService(
         GetGroupFileDownloadUrl,
-        GetGroupFileDownloadUrl.Req(
-            groupUin = groupUin,
-            fileId = fileId
-        )
+        GetGroupFileDownloadUrl.Req(groupUin, fileId)
     )
 
     /**
@@ -1423,11 +1409,11 @@ class Bot(
      * @param fileId 文件 ID
      */
     suspend fun deleteGroupFile(
-        groupUin: Long, fileId: String
+        groupUin: Long,
+        fileId: String
     ) = client.callService(
-        DeleteGroupFile, DeleteGroupFile.Req(
-            groupUin = groupUin, fileId = fileId
-        )
+        DeleteGroupFile,
+        DeleteGroupFile.Req(groupUin, fileId)
     )
 
     /**
@@ -1441,10 +1427,7 @@ class Bot(
         folderName: String
     ): String = client.callService(
         CreateGroupFolder,
-        CreateGroupFolder.Req(
-            groupUin = groupUin,
-            folderName = folderName
-        )
+        CreateGroupFolder.Req(groupUin, folderName)
     ).folderId
 
     /**
@@ -1459,11 +1442,7 @@ class Bot(
         newFolderName: String
     ) = client.callService(
         RenameGroupFolder,
-        RenameGroupFolder.Req(
-            groupUin = groupUin,
-            folderId = folderId,
-            newFolderName = newFolderName
-        )
+        RenameGroupFolder.Req(groupUin, folderId, newFolderName)
     )
 
     /**
@@ -1472,10 +1451,10 @@ class Bot(
      * @param folderId 文件夹 ID
      */
     suspend fun deleteGroupFolder(
-        groupUin: Long, folderId: String
+        groupUin: Long,
+        folderId: String
     ) = client.callService(
-        DeleteGroupFolder, DeleteGroupFolder.Req(
-            groupUin = groupUin, folderId = folderId
-        )
+        DeleteGroupFolder,
+        DeleteGroupFolder.Req(groupUin, folderId)
     )
 }
