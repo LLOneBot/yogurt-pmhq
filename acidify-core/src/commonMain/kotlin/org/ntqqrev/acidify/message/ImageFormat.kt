@@ -1,5 +1,8 @@
 package org.ntqqrev.acidify.message
 
+/**
+ * 图像格式枚举
+ */
 enum class ImageFormat(val ext: String, val underlying: Int) {
     PNG("png", 1001),
     GIF("gif", 2000),

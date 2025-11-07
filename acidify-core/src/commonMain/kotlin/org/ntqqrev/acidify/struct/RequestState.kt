@@ -1,9 +1,27 @@
 package org.ntqqrev.acidify.struct
 
+/**
+ * 请求状态枚举
+ */
 enum class RequestState(val value: Int) {
+    /**
+     * 默认 / 未知状态
+     */
     DEFAULT(0),
+
+    /**
+     * 待处理
+     */
     PENDING(1),
+
+    /**
+     * 已被接受
+     */
     ACCEPTED(2),
+
+    /**
+     * 已被拒绝
+     */
     REJECTED(3);
 
     companion object {

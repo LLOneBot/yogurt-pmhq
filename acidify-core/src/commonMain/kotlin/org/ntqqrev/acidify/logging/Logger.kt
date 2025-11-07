@@ -6,6 +6,11 @@ import org.ntqqrev.acidify.Bot
 
 typealias MessageSupplier = suspend () -> String
 
+/**
+ * 日志记录器，将日志消息发送到 Bot 的共享日志流
+ * @property bot 关联的 Bot 实例
+ * @property tag 日志标签，通常为完整类名
+ */
 class Logger(private val bot: Bot, val tag: String) {
     private fun MutableSharedFlow<LogMessage>.emitAsync(message: LogMessage) {
         bot.launch {

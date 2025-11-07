@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlinx.atomicfu)
     alias(libs.plugins.maven.publish)
+    alias(libs.plugins.dokka)
 }
 
 group = "org.ntqqrev"
@@ -60,5 +61,18 @@ mavenPublishing {
             developerConnection = "scm:git:ssh://github.com/LagrangeDev/acidify.git"
             url = "https://github.com/LagrangeDev/acidify"
         }
+    }
+}
+
+dokka {
+    dokkaSourceSets.commonMain {
+        sourceLink {
+            localDirectory.set(projectDir.resolve("src"))
+            remoteUrl("https://github.com/LagrangeDev/acidify/tree/main/acidify-core/src")
+            remoteLineSuffix.set("#L")
+        }
+    }
+    pluginsConfiguration.html {
+        footerMessage = "(c) LagrangeDev"
     }
 }

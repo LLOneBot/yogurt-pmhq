@@ -1,5 +1,9 @@
 package org.ntqqrev.acidify.logging
 
+/**
+ * 缩短包名以用于日志输出，将中间部分缩写为首字母
+ * @param tag 完整包名
+ */
 fun shortenPackageName(tag: String): String {
     val parts = tag.split('.')
     val b = StringBuilder()

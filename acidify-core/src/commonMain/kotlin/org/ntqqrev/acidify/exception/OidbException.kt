@@ -1,5 +1,12 @@
 package org.ntqqrev.acidify.exception
 
+/**
+ * Oidb 服务调用异常
+ * @property oidbCommand Oidb 命令
+ * @property oidbService Oidb 服务（子命令）
+ * @property oidbResult Oidb 返回码
+ * @property oidbErrorMsg Oidb 错误信息
+ */
 class OidbException(
     val oidbCommand: Int,
     val oidbService: Int,

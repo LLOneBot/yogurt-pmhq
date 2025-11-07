@@ -1,5 +1,10 @@
 package org.ntqqrev.acidify.exception
 
+/**
+ * 消息发送异常
+ * @property resultCode 错误码
+ * @property errorMessage 错误信息
+ */
 class MessageSendException(
     val resultCode: Int,
     val errorMessage: String
