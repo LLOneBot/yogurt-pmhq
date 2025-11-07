@@ -8,7 +8,7 @@ import org.ntqqrev.acidify.internal.protobuf.invoke
 import org.ntqqrev.acidify.internal.service.OidbService
 import org.ntqqrev.acidify.struct.BotFriendData
 import org.ntqqrev.acidify.struct.UserInfoGender
-import org.ntqqrev.acidify.struct.UserInfoKey
+import org.ntqqrev.acidify.internal.packet.misc.UserInfoKey
 
 internal object FetchFriends : OidbService<FetchFriends.Req, FetchFriends.Resp>(0xfd4, 1) {
     class Req(val nextUin: Long?)
