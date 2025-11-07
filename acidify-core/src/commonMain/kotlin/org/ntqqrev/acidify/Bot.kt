@@ -27,6 +27,7 @@ import org.ntqqrev.acidify.event.internal.KickSignal
 import org.ntqqrev.acidify.event.internal.MsgPushSignal
 import org.ntqqrev.acidify.exception.BotOnlineException
 import org.ntqqrev.acidify.exception.MessageSendException
+import org.ntqqrev.acidify.exception.WebApiException
 import org.ntqqrev.acidify.internal.LagrangeClient
 import org.ntqqrev.acidify.internal.packet.message.media.FileId
 import org.ntqqrev.acidify.internal.packet.message.media.IndexNode
@@ -932,7 +933,7 @@ class Bot(
         }
 
         if (!response.status.isSuccess()) {
-            throw RuntimeException("获取群公告失败: ${response.status}")
+            throw WebApiException("获取群公告失败", response.status)
         }
 
         val announceResp = response.body<GroupAnnounceResponse>()
@@ -1002,7 +1003,7 @@ class Bot(
         }
 
         if (!response.status.isSuccess()) {
-            throw RuntimeException("发送群公告失败: ${response.status}")
+            throw WebApiException("发送群公告失败", response.status)
         }
 
         val sendResp = response.body<GroupAnnounceSendResponse>()
@@ -1028,7 +1029,7 @@ class Bot(
         }
 
         if (!response.status.isSuccess()) {
-            throw RuntimeException("删除群公告失败: ${response.status}")
+            throw WebApiException("删除群公告失败", response.status)
         }
     }
 
@@ -1055,7 +1056,7 @@ class Bot(
         }
 
         if (!response.status.isSuccess()) {
-            throw RuntimeException("获取群精华消息失败: ${response.status}")
+            throw WebApiException("获取群精华消息失败", response.status)
         }
 
         val essenceResp = response.body<GroupEssenceResponse>()
