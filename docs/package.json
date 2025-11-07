@@ -1,0 +1,35 @@
+{
+  "name": "@saltify/acidify-docs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next",
+    "build": "next build",
+    "start": "next start",
+    "postbuild": "pagefind --site .next/server/app --output-path out/_pagefind"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "GPL-3.0-only",
+  "packageManager": "pnpm@10.20.0",
+  "dependencies": {
+    "@fontsource/inter": "^5.2.6",
+    "next": "^16.0.1",
+    "nextra": "^4.6.0",
+    "nextra-theme-docs": "^4.6.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@next/eslint-plugin-next": "^15.5.2",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint-config-next": "15.5.2",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "pagefind": "^1.4.0",
+    "typescript": "5.9.3"
+  }
+}

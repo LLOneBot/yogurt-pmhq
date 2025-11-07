@@ -1,0 +1,12 @@
+body {
+    font-family: "SF Pro Text", "SF Pro Display", "-apple-system", "InterLocal", "Inter",
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", system-ui, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+}
+
+code, kbd, samp, pre {
+    font-family: SFMono-Regular, "SF Mono", "JetBrains Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+code.nextra-code {
+    font-size: 1em;
+}

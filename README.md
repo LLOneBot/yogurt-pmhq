@@ -48,6 +48,7 @@ kotlin {
 - `yogurt-jvm` - Yogurt 的 JVM 平台实现 (Workaround for Ktor plugin's incompatibility issue)
 - `yogurt-media-codec` - Yogurt 的多媒体编解码支持模块
 - `yogurt-qrcode` - Yogurt 二维码矩阵生成
+- `docs` - 项目文档
 
 ## 支持平台
 
