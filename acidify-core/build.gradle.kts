@@ -54,7 +54,7 @@ kotlin {
                 "macosArm64",
                 "mingwX64"
             ).forEach { platformName ->
-                getByName(platformName + "Main").dependsOn(this)
+                runCatching { getByName(platformName + "Main").dependsOn(this) }
             }
         }
         val nonJsMain by creating {
