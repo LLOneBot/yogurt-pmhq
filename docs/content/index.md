@@ -10,7 +10,9 @@
 
 ### 基于 Acidify 进行开发
 
-[点击这里](./core/dependency.md)了解如何将 `acidify-core` 引入依赖。
+了解 `acidify-core` 如何[在 Kotlin 中使用](./core/kotlin.md)。
+
+更喜欢 JavaScript/TypeScript？请查看[在 Node.js 中使用](./core/nodejs.md)。
 
 ## 联系我们
 
