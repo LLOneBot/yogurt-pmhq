@@ -1,7 +1,7 @@
 package org.ntqqrev.acidify.entity
 
 import org.ntqqrev.acidify.Bot
-import org.ntqqrev.acidify.common.CacheUtility
+import org.ntqqrev.acidify.internal.CacheUtility
 import org.ntqqrev.acidify.struct.BotGroupData
 import org.ntqqrev.acidify.struct.BotGroupMemberData
 import kotlin.js.JsExport
@@ -13,11 +13,7 @@ import kotlin.js.JsExport
 class BotGroup internal constructor(
     bot: Bot,
     data: BotGroupData,
-) : AbstractEntity<BotGroupData>(bot, data) {
-
-    /**
-     * 群成员缓存服务
-     */
+) : BotEntity<BotGroupData>(bot, data) {
     private val memberCache = CacheUtility<Long, BotGroupMember, BotGroupMemberData>(
         bot = bot,
         updateCache = { bot -> bot.fetchGroupMembers(uin).associateBy { it.uin } },

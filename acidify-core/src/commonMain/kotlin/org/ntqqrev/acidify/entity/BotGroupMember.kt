@@ -6,7 +6,6 @@ import org.ntqqrev.acidify.struct.GroupMemberRole
 import kotlin.js.JsExport
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
-import kotlin.time.TimeSource
 
 /**
  * 群成员实体
@@ -17,7 +16,7 @@ class BotGroupMember internal constructor(
     bot: Bot,
     data: BotGroupMemberData,
     val group: BotGroup,
-) : AbstractEntity<BotGroupMemberData>(bot, data) {
+) : BotEntity<BotGroupMemberData>(bot, data) {
 
     /**
      * 群成员的 QQ 号

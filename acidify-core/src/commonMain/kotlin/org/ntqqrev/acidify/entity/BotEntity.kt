@@ -11,7 +11,7 @@ import org.ntqqrev.acidify.Bot
  * @property bot Bot 实例
  * @property data 绑定的数据
  */
-abstract class AbstractEntity<T>(
+abstract class BotEntity<T>(
     val bot: Bot,
     internal var data: T,
 ) {

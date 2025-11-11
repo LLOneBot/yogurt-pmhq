@@ -12,7 +12,7 @@ import kotlin.js.JsExport
 class BotFriend internal constructor(
     bot: Bot,
     data: BotFriendData,
-) : AbstractEntity<BotFriendData>(bot, data) {
+) : BotEntity<BotFriendData>(bot, data) {
 
     /**
      * 好友的 QQ 号
