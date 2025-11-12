@@ -15,19 +15,20 @@
 ## 模块一览
 
 - `acidify-core` - PC NTQQ 协议的核心实现
+  - `acidify-core-js` - `@acidify/core` 的 npm 发布包
 - `yogurt` - 基于 Acidify 的 Milky 实现
-- `yogurt-jvm` - Yogurt 的 JVM 平台实现 (Workaround for Ktor plugin's incompatibility issue)
-- `yogurt-media-codec` - Yogurt 的多媒体编解码支持模块
-- `yogurt-qrcode` - Yogurt 二维码矩阵生成
+  - `yogurt-jvm` - Yogurt 的 JVM 平台实现 (Workaround for Ktor plugin's incompatibility issue)
+  - `yogurt-media-codec` - Yogurt 的多媒体编解码支持模块
+  - `yogurt-qrcode` - Yogurt 的二维码矩阵生成模块
 - `docs` - 项目文档
 
 ## 支持平台
 
 - Kotlin/JVM
 - Kotlin/Native
-    - Windows via `mingwX64`
-    - macOS via `macosX64` and `macosArm64`
-    - Linux via `linuxX64` and `linuxArm64`
+  - Windows via `mingwX64`
+  - macOS via `macosX64` and `macosArm64`
+  - Linux via `linuxX64` and `linuxArm64`
 - Kotlin/JS (for `acidify-core`, Node.js only)
 
 ## Special Thanks
