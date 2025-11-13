@@ -16,7 +16,7 @@
 
 ### Kotlin
 
-- `acidify-core` - PC NTQQ 协议的核心实现
+- `acidify-core` - PC NTQQ 协议的核心实现 [![Maven Central](https://img.shields.io/maven-central/v/org.ntqqrev/acidify-core?label=Maven%20Central&logo=maven&color=blue)](https://central.sonatype.com/artifact/org.ntqqrev/acidify-core)
 - `yogurt` - 基于 Acidify 的 Milky 实现
   - `yogurt-jvm` - Yogurt 的 JVM 平台实现 (Workaround for Ktor plugin's incompatibility issue)
   - `yogurt-media-codec` - Yogurt 的多媒体编解码支持模块
@@ -24,7 +24,7 @@
 
 ### TypeScript
 
-- `@acidify/core` - `acidify-core` 的 Kotlin/JS 导出版本
+- `@acidify/core` - `acidify-core` 的 Kotlin/JS 导出版本 [![npm](https://img.shields.io/npm/v/%40acidify%2Fcore)](https://www.npmjs.com/package/@acidify/core)
 - `@acidify/docs` - Acidify 文档
 
 ## 支持平台
