@@ -25,6 +25,7 @@
 ### TypeScript
 
 - `@acidify/core` - `acidify-core` 的 Kotlin/JS 导出版本 [![npm](https://img.shields.io/npm/v/%40acidify%2Fcore)](https://www.npmjs.com/package/@acidify/core)
+- `@acidify/yogurt` - Yogurt 的预编译二进制包 [![npm](https://img.shields.io/npm/v/%40acidify%2Fyogurt)](https://www.npmjs.com/package/@acidify/yogurt)
 - `@acidify/docs` - Acidify 文档
 
 ## 支持平台
