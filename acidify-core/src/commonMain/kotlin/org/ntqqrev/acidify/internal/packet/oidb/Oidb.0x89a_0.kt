@@ -7,7 +7,7 @@ import org.ntqqrev.acidify.internal.protobuf.get
 
 internal object SetGroupWholeMuteReq : PbSchema() {
     val groupCode = PbInt64[1]
-    val state = State[9]
+    val state = State[2]
 
     internal object State : PbSchema() {
         val isMute = PbInt32[17]

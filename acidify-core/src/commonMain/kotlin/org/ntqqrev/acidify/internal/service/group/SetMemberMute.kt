@@ -16,8 +16,10 @@ internal object SetMemberMute : NoOutputOidbService<SetMemberMute.Req>(0x1253, 1
         SetMemberMuteReq {
             it[groupCode] = payload.groupUin
             it[type] = 1
-            it[targetUid] = payload.memberUid
-            it[duration] = payload.duration
+            it[body] = SetMemberMuteReq.Body {
+                it[targetUid] = payload.memberUid
+                it[duration] = payload.duration
+            }
         }.toByteArray()
 }
 
