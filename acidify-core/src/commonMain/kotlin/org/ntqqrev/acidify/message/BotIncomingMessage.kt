@@ -76,11 +76,16 @@ class BotIncomingMessage(
         )
 
         internal fun Bot.parseMessage(raw: PbObject<CommonMessage>): BotIncomingMessage? {
+            val draftMsg = buildDraftMessage(raw) ?: return null
+            return buildSegments(raw, draftMsg)
+        }
+
+        private fun Bot.buildDraftMessage(raw: PbObject<CommonMessage>): BotIncomingMessage? {
             val routingHead = raw.get { routingHead }
             val contentHead = raw.get { contentHead }
             val pushMsgType = PushMsgType.from(contentHead.get { type })
-            val elems = raw.get { messageBody }.get { richText }.get { elems }
-            val draftMsg = when (pushMsgType) {
+
+            return when (pushMsgType) {
                 PushMsgType.FriendMessage,
                 PushMsgType.FriendRecordMessage,
                 PushMsgType.FriendFileMessage -> {
@@ -116,6 +121,12 @@ class BotIncomingMessage(
 
                 else -> return null
             }
+        }
+
+        private fun Bot.buildSegments(raw: PbObject<CommonMessage>, draftMsg: BotIncomingMessage): BotIncomingMessage? {
+            val contentHead = raw.get { contentHead }
+            val pushMsgType = PushMsgType.from(contentHead.get { type })
+            val elems = raw.get { messageBody }.get { richText }.get { elems }
 
             if (pushMsgType != PushMsgType.FriendFileMessage) {
                 val ctx = MessageParsingContext(draftMsg, elems, this)
