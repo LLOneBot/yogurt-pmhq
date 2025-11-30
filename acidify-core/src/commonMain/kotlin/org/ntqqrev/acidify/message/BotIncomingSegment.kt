@@ -125,6 +125,7 @@ sealed class BotIncomingSegment {
      */
     class Forward internal constructor(
         val resId: String,
+        val preview: List<String>,
     ) : BotIncomingSegment() {
         override fun toString(): String = "[转发消息]"
     }

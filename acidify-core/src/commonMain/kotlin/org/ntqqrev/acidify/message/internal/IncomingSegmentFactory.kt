@@ -223,10 +223,10 @@ internal interface IncomingSegmentFactory<T : BotIncomingSegment> {
             val xml = ZLib.uncompress(
                 bytesTemplate1.sliceArray(1 until bytesTemplate1.size)
             ).decodeToString()
-            val resId = IncomingForwardBody.xmlModule
-                .decodeFromString<IncomingForwardBody>(xml).resId
+            val body = IncomingForwardBody.xmlModule.decodeFromString<IncomingForwardBody>(xml)
             return BotIncomingSegment.Forward(
-                resId = resId
+                resId = body.resId,
+                preview = body.items[0].titles.drop(1).map { it.text },
             )
         }
     }
