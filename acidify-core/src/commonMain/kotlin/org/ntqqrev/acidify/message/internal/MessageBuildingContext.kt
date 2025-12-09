@@ -19,7 +19,7 @@ import org.ntqqrev.acidify.internal.packet.message.extra.QBigFaceExtra
 import org.ntqqrev.acidify.internal.packet.message.extra.QSmallFaceExtra
 import org.ntqqrev.acidify.internal.packet.message.extra.SourceMsgResvAttr
 import org.ntqqrev.acidify.internal.packet.message.extra.TextResvAttr
-import org.ntqqrev.acidify.internal.packet.message.misc.ForwardLightAppPayload
+import org.ntqqrev.acidify.internal.packet.message.misc.OutgoingForwardPayload
 import org.ntqqrev.acidify.internal.protobuf.PbObject
 import org.ntqqrev.acidify.internal.protobuf.invoke
 import org.ntqqrev.acidify.internal.service.message.RichMediaUpload
@@ -441,7 +441,7 @@ internal class MessageBuildingContext(
             )
         )
 
-        val lightApp = ForwardLightAppPayload(
+        val lightApp = OutgoingForwardPayload(
             config = buildJsonObject {
                 put("autosize", 1)
                 put("forward", 1)
