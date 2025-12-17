@@ -47,7 +47,7 @@ class JsBot internal constructor(private val bot: Bot) : CoroutineScope by bot {
         bot.sendPacket(cmd, payload, timeoutMillis)
     }
 
-    fun qrCodeLogin(queryInterval: Long = 3000L, preloadContacts: Boolean) = promise {
+    fun qrCodeLogin(queryInterval: Long = 3000L, preloadContacts: Boolean = false) = promise {
         bot.qrCodeLogin(queryInterval, preloadContacts)
     }
 
@@ -55,7 +55,7 @@ class JsBot internal constructor(private val bot: Bot) : CoroutineScope by bot {
 
     fun offline() = promise { bot.offline() }
 
-    fun login(queryInterval: Long, preloadContacts: Boolean) = promise {
+    fun login(queryInterval: Long = 3000L, preloadContacts: Boolean = false) = promise {
         bot.login(queryInterval, preloadContacts)
     }
 
