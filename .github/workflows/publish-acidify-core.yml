@@ -1,4 +1,4 @@
-name: Publish acidify-core to Maven Central
+name: Publish and Release acidify-core to Maven Central
 on:
   workflow_dispatch:
 
@@ -18,7 +18,7 @@ jobs:
           distribution: 'zulu'
           java-version: 21
       - name: Publish to MavenCentral
-        run: ./gradlew :acidify-core:publishToMavenCentral
+        run: ./gradlew :acidify-core:publishAndReleaseToMavenCentral
         env:
           GITHUB_ACTIONS_BUILD_CORE_LIBRARY: 'true'
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
