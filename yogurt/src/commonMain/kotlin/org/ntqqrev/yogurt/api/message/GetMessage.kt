@@ -9,9 +9,9 @@ import org.ntqqrev.milky.GetMessageOutput
 import org.ntqqrev.yogurt.api.MilkyApiException
 import org.ntqqrev.yogurt.transform.toMessageScene
 import org.ntqqrev.yogurt.transform.transformMessage
-import org.ntqqrev.yogurt.util.invoke
+import org.ntqqrev.yogurt.util.define
 
-val GetMessage = ApiEndpoint.GetMessage {
+val GetMessage = ApiEndpoint.GetMessage.define {
     val bot = application.dependencies.resolve<Bot>()
 
     val messages = when (it.messageScene.toMessageScene()) {

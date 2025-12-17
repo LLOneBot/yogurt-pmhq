@@ -9,9 +9,10 @@ import org.ntqqrev.milky.SendGroupMessageOutput
 import org.ntqqrev.yogurt.api.MilkyApiException
 import org.ntqqrev.yogurt.transform.YogurtMessageBuildingContext
 import org.ntqqrev.yogurt.transform.applySegment
-import org.ntqqrev.yogurt.util.invoke
+import org.ntqqrev.yogurt.util.define
 
-val SendGroupMessage = ApiEndpoint.SendGroupMessage {
+val SendGroupMessage = ApiEndpoint.SendGroupMessage.// 检查群聊是否存在
+define {
     val bot = application.dependencies.resolve<Bot>()
 
     // 检查群聊是否存在

@@ -7,7 +7,7 @@ import org.ntqqrev.milky.ApiEndpoint
 import org.ntqqrev.milky.GetImplInfoOutput
 import org.ntqqrev.milky.milkyVersion
 import org.ntqqrev.yogurt.BuildKonfig
-import org.ntqqrev.yogurt.util.invoke
+import org.ntqqrev.yogurt.util.define
 
 private fun String.toMilkyProtocolOs() = when (this) {
     "Windows" -> "windows"
@@ -16,7 +16,7 @@ private fun String.toMilkyProtocolOs() = when (this) {
     else -> "linux"
 }
 
-val GetImplInfo = ApiEndpoint.GetImplInfo {
+val GetImplInfo = ApiEndpoint.GetImplInfo.define {
     val bot = application.dependencies.resolve<Bot>()
     GetImplInfoOutput(
         implName = BuildKonfig.name,

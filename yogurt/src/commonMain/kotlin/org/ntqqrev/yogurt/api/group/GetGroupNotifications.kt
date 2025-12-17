@@ -6,9 +6,9 @@ import org.ntqqrev.acidify.Bot
 import org.ntqqrev.milky.ApiEndpoint
 import org.ntqqrev.milky.GetGroupNotificationsOutput
 import org.ntqqrev.yogurt.transform.toMilkyEntity
-import org.ntqqrev.yogurt.util.invoke
+import org.ntqqrev.yogurt.util.define
 
-val GetGroupNotifications = ApiEndpoint.GetGroupNotifications {
+val GetGroupNotifications = ApiEndpoint.GetGroupNotifications.define {
     val bot = application.dependencies.resolve<Bot>()
 
     val (notifications, nextSeq) = bot.getGroupNotifications(

@@ -6,9 +6,9 @@ import org.ntqqrev.acidify.Bot
 import org.ntqqrev.milky.ApiEndpoint
 import org.ntqqrev.milky.RejectGroupRequestOutput
 import org.ntqqrev.yogurt.transform.toEventType
-import org.ntqqrev.yogurt.util.invoke
+import org.ntqqrev.yogurt.util.define
 
-val RejectGroupRequest = ApiEndpoint.RejectGroupRequest {
+val RejectGroupRequest = ApiEndpoint.RejectGroupRequest.define {
     val bot = application.dependencies.resolve<Bot>()
 
     bot.setGroupRequest(

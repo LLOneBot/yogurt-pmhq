@@ -9,9 +9,9 @@ import org.ntqqrev.milky.GetHistoryMessagesOutput
 import org.ntqqrev.yogurt.api.MilkyApiException
 import org.ntqqrev.yogurt.transform.toMessageScene
 import org.ntqqrev.yogurt.transform.transformMessage
-import org.ntqqrev.yogurt.util.invoke
+import org.ntqqrev.yogurt.util.define
 
-val GetHistoryMessages = ApiEndpoint.GetHistoryMessages {
+val GetHistoryMessages = ApiEndpoint.GetHistoryMessages.define {
     val bot = application.dependencies.resolve<Bot>()
 
     if (it.limit !in 1..30) {

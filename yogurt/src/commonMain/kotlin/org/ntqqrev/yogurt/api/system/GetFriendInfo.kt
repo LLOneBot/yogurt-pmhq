@@ -7,9 +7,9 @@ import org.ntqqrev.milky.ApiEndpoint
 import org.ntqqrev.milky.GetFriendInfoOutput
 import org.ntqqrev.yogurt.api.MilkyApiException
 import org.ntqqrev.yogurt.transform.toMilkyEntity
-import org.ntqqrev.yogurt.util.invoke
+import org.ntqqrev.yogurt.util.define
 
-val GetFriendInfo = ApiEndpoint.GetFriendInfo {
+val GetFriendInfo = ApiEndpoint.GetFriendInfo.define {
     val bot = application.dependencies.resolve<Bot>()
     val friend = bot.getFriend(it.userId, forceUpdate = it.noCache)
         ?: throw MilkyApiException(-404, "Friend not found")

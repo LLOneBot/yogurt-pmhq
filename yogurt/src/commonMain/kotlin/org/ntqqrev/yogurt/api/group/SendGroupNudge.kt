@@ -7,9 +7,9 @@ import org.ntqqrev.milky.ApiEndpoint
 import org.ntqqrev.milky.SendGroupNudgeOutput
 import org.ntqqrev.yogurt.api.MilkyApiException
 
-import org.ntqqrev.yogurt.util.invoke
+import org.ntqqrev.yogurt.util.define
 
-val SendGroupNudge = ApiEndpoint.SendGroupNudge {
+val SendGroupNudge = ApiEndpoint.SendGroupNudge.define {
     val bot = application.dependencies.resolve<Bot>()
     bot.getGroup(it.groupId)
         ?: throw MilkyApiException(-404, "Group not found")

@@ -6,9 +6,9 @@ import org.ntqqrev.acidify.Bot
 import org.ntqqrev.milky.ApiEndpoint
 import org.ntqqrev.milky.GetFriendListOutput
 import org.ntqqrev.yogurt.transform.toMilkyEntity
-import org.ntqqrev.yogurt.util.invoke
+import org.ntqqrev.yogurt.util.define
 
-val GetFriendList = ApiEndpoint.GetFriendList {
+val GetFriendList = ApiEndpoint.GetFriendList.define {
     val bot = application.dependencies.resolve<Bot>()
     val friends = bot.getFriends(forceUpdate = it.noCache)
     GetFriendListOutput(

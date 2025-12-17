@@ -5,9 +5,9 @@ import io.ktor.server.routing.*
 import org.ntqqrev.acidify.Bot
 import org.ntqqrev.milky.ApiEndpoint
 import org.ntqqrev.milky.DeleteGroupFileOutput
-import org.ntqqrev.yogurt.util.invoke
+import org.ntqqrev.yogurt.util.define
 
-val DeleteGroupFile = ApiEndpoint.DeleteGroupFile {
+val DeleteGroupFile = ApiEndpoint.DeleteGroupFile.define {
     val bot = application.dependencies.resolve<Bot>()
 
     bot.deleteGroupFile(it.groupId, it.fileId)

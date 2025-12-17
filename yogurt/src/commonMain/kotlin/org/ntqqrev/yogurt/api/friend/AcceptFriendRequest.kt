@@ -5,9 +5,9 @@ import io.ktor.server.routing.*
 import org.ntqqrev.acidify.Bot
 import org.ntqqrev.milky.AcceptFriendRequestOutput
 import org.ntqqrev.milky.ApiEndpoint
-import org.ntqqrev.yogurt.util.invoke
+import org.ntqqrev.yogurt.util.define
 
-val AcceptFriendRequest = ApiEndpoint.AcceptFriendRequest {
+val AcceptFriendRequest = ApiEndpoint.AcceptFriendRequest.define {
     val bot = application.dependencies.resolve<Bot>()
 
     bot.setFriendRequest(

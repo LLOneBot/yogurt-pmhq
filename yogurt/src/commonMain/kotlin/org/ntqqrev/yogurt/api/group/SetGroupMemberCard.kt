@@ -7,9 +7,9 @@ import org.ntqqrev.milky.ApiEndpoint
 import org.ntqqrev.milky.SetGroupMemberCardOutput
 import org.ntqqrev.yogurt.api.MilkyApiException
 
-import org.ntqqrev.yogurt.util.invoke
+import org.ntqqrev.yogurt.util.define
 
-val SetGroupMemberCard = ApiEndpoint.SetGroupMemberCard {
+val SetGroupMemberCard = ApiEndpoint.SetGroupMemberCard.define {
     val bot = application.dependencies.resolve<Bot>()
     bot.getGroup(it.groupId)
         ?: throw MilkyApiException(-404, "Group not found")

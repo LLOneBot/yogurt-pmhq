@@ -7,9 +7,9 @@ import org.ntqqrev.milky.ApiEndpoint
 import org.ntqqrev.milky.DeleteGroupAnnouncementOutput
 import org.ntqqrev.yogurt.api.MilkyApiException
 
-import org.ntqqrev.yogurt.util.invoke
+import org.ntqqrev.yogurt.util.define
 
-val DeleteGroupAnnouncement = ApiEndpoint.DeleteGroupAnnouncement {
+val DeleteGroupAnnouncement = ApiEndpoint.DeleteGroupAnnouncement.define {
     val bot = application.dependencies.resolve<Bot>()
     bot.getGroup(it.groupId)
         ?: throw MilkyApiException(-404, "Group not found")

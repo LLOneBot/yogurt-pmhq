@@ -8,9 +8,10 @@ import org.ntqqrev.milky.ApiEndpoint
 import org.ntqqrev.milky.MarkMessageAsReadOutput
 import org.ntqqrev.yogurt.api.MilkyApiException
 import org.ntqqrev.yogurt.transform.toMessageScene
-import org.ntqqrev.yogurt.util.invoke
+import org.ntqqrev.yogurt.util.define
 
-val MarkMessageAsRead = ApiEndpoint.MarkMessageAsRead {
+val MarkMessageAsRead = ApiEndpoint.MarkMessageAsRead.// Get the message time from history
+define {
     val bot = application.dependencies.resolve<Bot>()
 
     when (it.messageScene.toMessageScene()) {

@@ -7,9 +7,9 @@ import org.ntqqrev.milky.ApiEndpoint
 import org.ntqqrev.milky.GetForwardedMessagesOutput
 import org.ntqqrev.milky.IncomingForwardedMessage
 import org.ntqqrev.yogurt.transform.transformSegment
-import org.ntqqrev.yogurt.util.invoke
+import org.ntqqrev.yogurt.util.define
 
-val GetForwardedMessages = ApiEndpoint.GetForwardedMessages {
+val GetForwardedMessages = ApiEndpoint.GetForwardedMessages.define {
     val bot = application.dependencies.resolve<Bot>()
 
     val forwardedMessages = bot.getForwardedMessages(it.forwardId)

@@ -6,10 +6,13 @@ import org.ntqqrev.acidify.Bot
 import org.ntqqrev.milky.ApiEndpoint
 import org.ntqqrev.milky.UploadGroupFileOutput
 import org.ntqqrev.yogurt.api.MilkyApiException
-import org.ntqqrev.yogurt.util.invoke
+import org.ntqqrev.yogurt.util.define
 import org.ntqqrev.yogurt.util.resolveUri
 
-val UploadGroupFile = ApiEndpoint.UploadGroupFile {
+val UploadGroupFile = ApiEndpoint.UploadGroupFile.// 解析文件 URI 并获取文件数据
+
+    // 调用 Bot API 上传群文件
+define {
     val bot = application.dependencies.resolve<Bot>()
     bot.getGroup(it.groupId) ?: throw MilkyApiException(-404, "Group not found")
 

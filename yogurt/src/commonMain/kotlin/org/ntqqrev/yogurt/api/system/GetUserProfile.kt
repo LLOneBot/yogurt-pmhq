@@ -5,9 +5,9 @@ import io.ktor.server.routing.*
 import org.ntqqrev.acidify.Bot
 import org.ntqqrev.milky.ApiEndpoint
 import org.ntqqrev.yogurt.transform.toMilkyOutput
-import org.ntqqrev.yogurt.util.invoke
+import org.ntqqrev.yogurt.util.define
 
-val GetUserProfile = ApiEndpoint.GetUserProfile {
+val GetUserProfile = ApiEndpoint.GetUserProfile.define {
     val bot = application.dependencies.resolve<Bot>()
     bot.fetchUserInfoByUin(it.userId).toMilkyOutput()
 }

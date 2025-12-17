@@ -5,9 +5,9 @@ import io.ktor.server.routing.*
 import org.ntqqrev.acidify.Bot
 import org.ntqqrev.milky.ApiEndpoint
 import org.ntqqrev.milky.RejectGroupInvitationOutput
-import org.ntqqrev.yogurt.util.invoke
+import org.ntqqrev.yogurt.util.define
 
-val RejectGroupInvitation = ApiEndpoint.RejectGroupInvitation {
+val RejectGroupInvitation = ApiEndpoint.RejectGroupInvitation.define {
     val bot = application.dependencies.resolve<Bot>()
 
     bot.setGroupInvitation(

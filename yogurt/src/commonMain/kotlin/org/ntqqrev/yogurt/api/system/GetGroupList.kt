@@ -6,9 +6,9 @@ import org.ntqqrev.acidify.Bot
 import org.ntqqrev.milky.ApiEndpoint
 import org.ntqqrev.milky.GetGroupListOutput
 import org.ntqqrev.yogurt.transform.toMilkyEntity
-import org.ntqqrev.yogurt.util.invoke
+import org.ntqqrev.yogurt.util.define
 
-val GetGroupList = ApiEndpoint.GetGroupList {
+val GetGroupList = ApiEndpoint.GetGroupList.define {
     val bot = application.dependencies.resolve<Bot>()
     val groups = bot.getGroups(forceUpdate = it.noCache)
     GetGroupListOutput(

@@ -5,9 +5,9 @@ import io.ktor.server.routing.*
 import org.ntqqrev.acidify.Bot
 import org.ntqqrev.milky.ApiEndpoint
 import org.ntqqrev.milky.RenameGroupFolderOutput
-import org.ntqqrev.yogurt.util.invoke
+import org.ntqqrev.yogurt.util.define
 
-val RenameGroupFolder = ApiEndpoint.RenameGroupFolder {
+val RenameGroupFolder = ApiEndpoint.RenameGroupFolder.define {
     val bot = application.dependencies.resolve<Bot>()
 
     bot.renameGroupFolder(it.groupId, it.folderId, it.newFolderName)

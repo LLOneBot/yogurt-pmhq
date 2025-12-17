@@ -6,9 +6,9 @@ import org.ntqqrev.acidify.Bot
 import org.ntqqrev.milky.ApiEndpoint
 import org.ntqqrev.milky.RecallGroupMessageOutput
 import org.ntqqrev.yogurt.api.MilkyApiException
-import org.ntqqrev.yogurt.util.invoke
+import org.ntqqrev.yogurt.util.define
 
-val RecallGroupMessage = ApiEndpoint.RecallGroupMessage {
+val RecallGroupMessage = ApiEndpoint.RecallGroupMessage.define {
     val bot = application.dependencies.resolve<Bot>()
 
     bot.getGroup(it.groupId)

@@ -6,9 +6,9 @@ import org.ntqqrev.acidify.Bot
 import org.ntqqrev.milky.ApiEndpoint
 import org.ntqqrev.milky.RecallPrivateMessageOutput
 import org.ntqqrev.yogurt.api.MilkyApiException
-import org.ntqqrev.yogurt.util.invoke
+import org.ntqqrev.yogurt.util.define
 
-val RecallPrivateMessage = ApiEndpoint.RecallPrivateMessage {
+val RecallPrivateMessage = ApiEndpoint.RecallPrivateMessage.define {
     val bot = application.dependencies.resolve<Bot>()
     bot.getFriend(it.userId)
         ?: throw MilkyApiException(-404, "Friend not found")

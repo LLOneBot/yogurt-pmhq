@@ -5,10 +5,10 @@ import io.ktor.server.routing.*
 import org.ntqqrev.acidify.Bot
 import org.ntqqrev.milky.ApiEndpoint
 import org.ntqqrev.milky.UploadPrivateFileOutput
-import org.ntqqrev.yogurt.util.invoke
+import org.ntqqrev.yogurt.util.define
 import org.ntqqrev.yogurt.util.resolveUri
 
-val UploadPrivateFile = ApiEndpoint.UploadPrivateFile {
+val UploadPrivateFile = ApiEndpoint.UploadPrivateFile.define {
     val bot = application.dependencies.resolve<Bot>()
 
     val fileData = resolveUri(it.fileUri)
