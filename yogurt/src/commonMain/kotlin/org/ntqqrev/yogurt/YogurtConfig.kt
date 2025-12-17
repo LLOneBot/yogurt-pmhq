@@ -41,6 +41,7 @@ class YogurtConfig(
     @Serializable
     class MilkyWebhookConfig(
         val url: List<String> = emptyList(),
+        val accessToken: String = "",
     )
 
     companion object {

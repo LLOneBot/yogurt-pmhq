@@ -123,6 +123,7 @@ suspend fun Application.transformAcidifyEvent(event: AcidifyEvent): Event? {
             data = Event.GroupAdminChange.Data(
                 groupId = event.groupUin,
                 userId = event.userUin,
+                operatorId = event.operatorUin,
                 isSet = event.isSet
             )
         )
@@ -133,6 +134,7 @@ suspend fun Application.transformAcidifyEvent(event: AcidifyEvent): Event? {
             data = Event.GroupEssenceMessageChange.Data(
                 groupId = event.groupUin,
                 messageSeq = event.messageSeq,
+                operatorId = event.operatorUin,
                 isSet = event.isSet
             )
         )

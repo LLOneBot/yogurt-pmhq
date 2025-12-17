@@ -28,6 +28,9 @@ fun Application.configureMilkyEventWebhook() = launch {
                 launch {
                     try {
                         webhookClient.post(webhookUrl) {
+                            if (config.webhookConfig.accessToken.isNotEmpty()) {
+                                bearerAuth(config.webhookConfig.accessToken)
+                            }
                             contentType(ContentType.Application.Json)
                             setBody(it)
                         }

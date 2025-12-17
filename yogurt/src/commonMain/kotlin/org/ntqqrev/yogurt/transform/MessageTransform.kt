@@ -71,7 +71,8 @@ suspend fun Application.transformSegment(segment: BotIncomingSegment): IncomingS
 
         is BotIncomingSegment.Face -> IncomingSegment.Face(
             data = IncomingSegment.Face.Data(
-                faceId = segment.faceId.toString()
+                faceId = segment.faceId.toString(),
+                isLarge = segment.isLarge,
             )
         )
 
@@ -87,8 +88,8 @@ suspend fun Application.transformSegment(segment: BotIncomingSegment): IncomingS
                 tempUrl = bot.getDownloadUrl(segment.fileId),
                 width = segment.width,
                 height = segment.height,
+                subType = segment.subType.toMilkyString(),
                 summary = segment.summary,
-                subType = segment.subType.toMilkyString()
             )
         )
 
@@ -122,6 +123,9 @@ suspend fun Application.transformSegment(segment: BotIncomingSegment): IncomingS
         is BotIncomingSegment.Forward -> IncomingSegment.Forward(
             data = IncomingSegment.Forward.Data(
                 forwardId = segment.resId,
+                title = segment.title,
+                preview = segment.preview,
+                summary = segment.summary,
             )
         )
 
@@ -139,6 +143,10 @@ suspend fun Application.transformSegment(segment: BotIncomingSegment): IncomingS
         } else {
             IncomingSegment.MarketFace(
                 data = IncomingSegment.MarketFace.Data(
+                    emojiPackageId = segment.emojiPackageId,
+                    emojiId = segment.emojiId,
+                    key = segment.key,
+                    summary = segment.summary,
                     url = segment.url,
                 )
             )
@@ -297,7 +305,8 @@ suspend fun Application.transformEssenceSegment(segment: BotEssenceSegment): Inc
 
         is BotEssenceSegment.Face -> IncomingSegment.Face(
             data = IncomingSegment.Face.Data(
-                faceId = segment.faceId.toString()
+                faceId = segment.faceId.toString(),
+                isLarge = false,
             )
         )
 
