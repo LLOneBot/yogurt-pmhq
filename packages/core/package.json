@@ -3,7 +3,7 @@
   "type": "module",
   "version": "__VERSION__",
   "description": "Kotlin NTQQ protocol implementation, ported to JS",
-  "main": "dist/acidify-acidify-core.js",
+  "main": "dist/acidify-acidify-core.mjs",
   "typings": "dist/acidify-acidify-core.d.ts",
   "scripts": {
     "build": "tsdown && node scripts/copy-dts.mjs",
