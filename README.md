@@ -37,6 +37,11 @@
   - Linux via `linuxX64` and `linuxArm64`
 - Kotlin/JS (for `acidify-core`, Node.js only)
 
+## See Also
+
+- [Milky](https://milky.ntqqrev.org/) - 基于 HTTP / WebSocket 通信的新时代 QQ 机器人应用接口标准
+- [Cecilia](https://github.com/Wesley-Young/Cecilia) - 实验性的基于 Compose 的即时聊天软件
+
 ## Special Thanks
 
 - [Lagrange.Core](https://github.com/LagrangeDev/Lagrange.Core) 提供项目的基础架构和绝大多数协议包定义
@@ -46,10 +51,6 @@
 - [LagrangeCodec](https://github.com/LagrangeDev/LagrangeCodec) 提供多媒体编解码的实现
 - [@Linwenxuan04](https://github.com/Linwenxuan04) 编写 crypto 和 multiprecision 部分
 - ... and all the contributors along the way!
-
-## See Also
-
-- [Cecilia](https://github.com/Wesley-Young/Cecilia) - 基于 Acidify + Compose 的即时聊天软件。
 
 ## Contributors
 
