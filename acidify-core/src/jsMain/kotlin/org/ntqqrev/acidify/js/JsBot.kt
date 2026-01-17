@@ -6,7 +6,7 @@ import kotlinx.coroutines.await
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.promise
-import org.ntqqrev.acidify.Bot
+import org.ntqqrev.acidify.*
 import org.ntqqrev.acidify.common.AppInfo
 import org.ntqqrev.acidify.common.SessionStore
 import org.ntqqrev.acidify.common.UnsafeAcidifyApi

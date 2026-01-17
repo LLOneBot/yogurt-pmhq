@@ -1,6 +1,7 @@
 package org.ntqqrev.acidify.struct
 
 import org.ntqqrev.acidify.Bot
+import org.ntqqrev.acidify.getUinByUid
 import org.ntqqrev.acidify.internal.packet.oidb.FilteredFriendRequestItem
 import org.ntqqrev.acidify.internal.packet.oidb.FriendRequestItem
 import org.ntqqrev.acidify.internal.protobuf.PbObject

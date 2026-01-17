@@ -15,6 +15,8 @@ import org.ntqqrev.acidify.entity.BotFriend
 import org.ntqqrev.acidify.entity.BotGroup
 import org.ntqqrev.acidify.entity.BotGroupMember
 import org.ntqqrev.acidify.event.*
+import org.ntqqrev.acidify.getFriend
+import org.ntqqrev.acidify.getGroup
 import org.ntqqrev.acidify.logging.LogHandler
 import org.ntqqrev.acidify.logging.LogLevel
 import org.ntqqrev.acidify.logging.shortenPackageName
@@ -91,13 +93,13 @@ private val BotGroupMember.displayName
     get() = card.ifBlank { nickname }.joinToSingleLine()
 
 private val BotFriend.displayString: String
-    get() = TextColors.yellow("$displayName ($uin)")
+    get() = yellow("$displayName ($uin)")
 
 private val BotGroup.displayString: String
-    get() = TextColors.green("$name ($uin)")
+    get() = green("$name ($uin)")
 
 private val BotGroupMember.displayString: String
-    get() = TextColors.blue("$displayName ($uin)")
+    get() = blue("$displayName ($uin)")
 
 @Suppress("duplicatedCode")
 fun Application.configureEventLogging() = launch {

@@ -1,6 +1,7 @@
 package org.ntqqrev.acidify.entity
 
 import org.ntqqrev.acidify.Bot
+import org.ntqqrev.acidify.fetchGroupMembers
 import org.ntqqrev.acidify.internal.CacheUtility
 import org.ntqqrev.acidify.struct.BotGroupData
 import org.ntqqrev.acidify.struct.BotGroupMemberData

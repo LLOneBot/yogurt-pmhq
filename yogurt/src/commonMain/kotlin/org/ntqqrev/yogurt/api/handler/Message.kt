@@ -2,7 +2,7 @@ package org.ntqqrev.yogurt.api.handler
 
 import io.ktor.server.plugins.di.*
 import io.ktor.server.routing.*
-import org.ntqqrev.acidify.Bot
+import org.ntqqrev.acidify.*
 import org.ntqqrev.acidify.message.MessageScene
 import org.ntqqrev.milky.*
 import org.ntqqrev.yogurt.api.MilkyApiException

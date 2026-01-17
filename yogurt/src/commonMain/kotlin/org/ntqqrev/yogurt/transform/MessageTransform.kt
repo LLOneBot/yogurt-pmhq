@@ -5,6 +5,9 @@ import io.ktor.server.plugins.di.*
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import org.ntqqrev.acidify.Bot
+import org.ntqqrev.acidify.getDownloadUrl
+import org.ntqqrev.acidify.getFriend
+import org.ntqqrev.acidify.getGroup
 import org.ntqqrev.acidify.message.*
 import org.ntqqrev.acidify.message.ImageFormat
 import org.ntqqrev.milky.GroupEssenceMessage

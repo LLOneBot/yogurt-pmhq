@@ -5,7 +5,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import org.ntqqrev.acidify.Bot
+import org.ntqqrev.acidify.*
 import org.ntqqrev.acidify.event.*
 import org.ntqqrev.acidify.internal.packet.message.PushMsg
 import org.ntqqrev.acidify.internal.packet.message.PushMsgType

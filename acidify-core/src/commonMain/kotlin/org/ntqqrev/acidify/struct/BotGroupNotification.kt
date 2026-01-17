@@ -1,6 +1,7 @@
 package org.ntqqrev.acidify.struct
 
 import org.ntqqrev.acidify.Bot
+import org.ntqqrev.acidify.getUinByUid
 import org.ntqqrev.acidify.internal.packet.oidb.GroupNotification
 import org.ntqqrev.acidify.internal.protobuf.PbObject
 import kotlin.js.JsExport

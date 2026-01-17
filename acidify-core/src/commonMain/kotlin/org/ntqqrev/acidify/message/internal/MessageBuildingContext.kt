@@ -12,6 +12,9 @@ import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.ntqqrev.acidify.Bot
+import org.ntqqrev.acidify.getFriendHistoryMessages
+import org.ntqqrev.acidify.getGroupHistoryMessages
+import org.ntqqrev.acidify.getUidByUin
 import org.ntqqrev.acidify.internal.crypto.hash.MD5
 import org.ntqqrev.acidify.internal.packet.message.*
 import org.ntqqrev.acidify.internal.packet.message.elem.*
