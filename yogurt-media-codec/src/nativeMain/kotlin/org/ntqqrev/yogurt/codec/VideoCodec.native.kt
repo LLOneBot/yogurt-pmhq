@@ -2,8 +2,9 @@
 
 package org.ntqqrev.yogurt.codec
 
-import liblagrangecodec.*
 import kotlinx.cinterop.*
+import liblagrangecodec.video_first_frame
+import liblagrangecodec.video_get_size
 import kotlin.time.Duration.Companion.seconds
 
 actual fun getVideoInfo(videoData: ByteArray): VideoInfo = memScoped {

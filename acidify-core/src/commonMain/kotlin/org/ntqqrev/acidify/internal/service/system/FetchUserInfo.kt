@@ -1,6 +1,7 @@
 package org.ntqqrev.acidify.internal.service.system
 
 import org.ntqqrev.acidify.internal.LagrangeClient
+import org.ntqqrev.acidify.internal.packet.misc.UserInfoKey
 import org.ntqqrev.acidify.internal.packet.oidb.FetchUserInfoByUidReq
 import org.ntqqrev.acidify.internal.packet.oidb.FetchUserInfoByUinReq
 import org.ntqqrev.acidify.internal.packet.oidb.FetchUserInfoReqKey
@@ -9,7 +10,6 @@ import org.ntqqrev.acidify.internal.protobuf.invoke
 import org.ntqqrev.acidify.internal.service.OidbService
 import org.ntqqrev.acidify.struct.BotUserInfo
 import org.ntqqrev.acidify.struct.UserInfoGender
-import org.ntqqrev.acidify.internal.packet.misc.UserInfoKey
 
 internal object FetchUserInfo {
     private val fetchKeys = listOf(

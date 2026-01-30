@@ -2,7 +2,7 @@
 
 package org.ntqqrev.yogurt
 
-import io.ktor.server.engine.addShutdownHook
+import io.ktor.server.engine.*
 import kotlin.jvm.JvmName
 
 fun main() {

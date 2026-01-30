@@ -1,6 +1,5 @@
 package org.ntqqrev.yogurt.util
 
-import com.github.ajalt.mordant.rendering.TextColors
 import com.github.ajalt.mordant.rendering.TextColors.*
 import com.github.ajalt.mordant.rendering.TextStyles.bold
 import io.ktor.server.application.*

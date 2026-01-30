@@ -11,15 +11,12 @@ import org.ntqqrev.yogurt.util.resolveUri
 
 val UploadPrivateFile = ApiEndpoint.UploadPrivateFile.define {
     val bot = application.dependencies.resolve<Bot>()
-
     val fileData = resolveUri(it.fileUri)
-
     val fileId = bot.uploadPrivateFile(
         friendUin = it.userId,
         fileName = it.fileName,
         fileData = fileData
     )
-
     UploadPrivateFileOutput(fileId)
 }
 

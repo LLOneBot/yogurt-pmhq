@@ -2,11 +2,11 @@ package org.ntqqrev.acidify.internal.service.system
 
 import kotlinx.io.Buffer
 import kotlinx.io.readByteArray
-import kotlin.time.Clock
 import org.ntqqrev.acidify.internal.LagrangeClient
 import org.ntqqrev.acidify.internal.packet.oidb.SetGroupPinReq
 import org.ntqqrev.acidify.internal.protobuf.invoke
 import org.ntqqrev.acidify.internal.service.NoOutputOidbService
+import kotlin.time.Clock
 
 internal object SetGroupPin : NoOutputOidbService<SetGroupPin.Req>(0x5d6, 1) {
     class Req(
