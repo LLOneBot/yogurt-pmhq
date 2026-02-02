@@ -274,13 +274,13 @@ class JsBot internal constructor(private val bot: Bot) : CoroutineScope by bot {
     fun sendGroupAnnouncement(
         groupUin: Long,
         content: String,
-        imageUrl: String? = null,
+        imageData: ByteArray? = null,
         showEditCard: Boolean = false,
         showTipWindow: Boolean = true,
         confirmRequired: Boolean = true,
         isPinned: Boolean = false,
     ): Promise<String> = promise {
-        bot.sendGroupAnnouncement(groupUin, content, imageUrl, showEditCard, showTipWindow, confirmRequired, isPinned)
+        bot.sendGroupAnnouncement(groupUin, content, imageData, showEditCard, showTipWindow, confirmRequired, isPinned)
     }
 
     fun deleteGroupAnnouncement(groupUin: Long, announcementId: String) = promise {
