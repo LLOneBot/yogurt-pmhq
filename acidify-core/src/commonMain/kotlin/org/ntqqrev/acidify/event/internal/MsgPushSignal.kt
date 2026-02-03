@@ -42,9 +42,9 @@ internal object MsgPushSignal : AbstractSignal("trpc.msg.olpush.OlPushService.Ms
                     val member = bot.getGroup(msg.peerUin)?.getMember(msg.senderUin)
                     member?.updateBinding(
                         member.data.copy(
-                            nickname = msg.extraInfo!!.nick,
-                            card = msg.extraInfo!!.groupCard,
-                            specialTitle = msg.extraInfo!!.specialTitle
+                            nickname = msg.extraInfo.nick,
+                            card = msg.extraInfo.groupCard,
+                            specialTitle = msg.extraInfo.specialTitle
                         )
                     )
                 }
