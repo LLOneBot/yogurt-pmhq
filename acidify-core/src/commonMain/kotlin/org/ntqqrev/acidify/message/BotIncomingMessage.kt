@@ -44,7 +44,7 @@ data class BotIncomingMessage internal constructor(
      * @property groupCard 发送者的群名片
      * @property specialTitle 发送者的群头衔
      */
-    class ExtraInfo internal constructor(
+    data class ExtraInfo internal constructor(
         val nick: String,
         val groupCard: String,
         val specialTitle: String
