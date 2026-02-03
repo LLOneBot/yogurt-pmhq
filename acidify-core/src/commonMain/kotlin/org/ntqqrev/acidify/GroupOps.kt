@@ -14,9 +14,10 @@ import org.ntqqrev.acidify.internal.json.GroupEssenceResponse
 import org.ntqqrev.acidify.internal.service.group.*
 import org.ntqqrev.acidify.internal.util.unescapeHttp
 import org.ntqqrev.acidify.message.BotEssenceMessageResult
-import org.ntqqrev.acidify.message.internal.MessageParsingContext.Companion.toBotEssenceMessage
+import org.ntqqrev.acidify.message.internal.toBotEssenceMessage
 import org.ntqqrev.acidify.struct.BotGroupAnnouncement
 import org.ntqqrev.acidify.struct.BotGroupNotification
+import org.ntqqrev.acidify.struct.internal.parseNotification
 
 /**
  * 设置群名称
@@ -398,7 +399,7 @@ suspend fun Bot.getGroupNotifications(
         FetchGroupNotifications.Req(startSequence ?: 0, count)
     )
     val notifications = resp.notifications.mapNotNull {
-        with(BotGroupNotification) { parseNotification(it, isFiltered) }
+        parseNotification(it, isFiltered)
     }
     return notifications to resp.nextSequence.takeIf { it != 0L }
 }

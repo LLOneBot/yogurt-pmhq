@@ -8,8 +8,8 @@ import org.ntqqrev.acidify.internal.service.message.*
 import org.ntqqrev.acidify.internal.util.pbDecode
 import org.ntqqrev.acidify.message.*
 import org.ntqqrev.acidify.message.internal.MessageBuildingContext
-import org.ntqqrev.acidify.message.internal.MessageParsingContext.Companion.parseForwardedMessage
-import org.ntqqrev.acidify.message.internal.MessageParsingContext.Companion.parseMessage
+import org.ntqqrev.acidify.message.internal.parseForwardedMessage
+import org.ntqqrev.acidify.message.internal.parseMessage
 import kotlin.io.encoding.Base64
 import kotlin.random.Random
 

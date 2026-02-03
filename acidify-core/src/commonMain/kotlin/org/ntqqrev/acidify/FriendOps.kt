@@ -3,8 +3,8 @@ package org.ntqqrev.acidify
 import org.ntqqrev.acidify.internal.service.friend.*
 import org.ntqqrev.acidify.internal.service.message.SendFriendNudge
 import org.ntqqrev.acidify.struct.BotFriendRequest
-import org.ntqqrev.acidify.struct.BotFriendRequest.Companion.parseFilteredFriendRequest
-import org.ntqqrev.acidify.struct.BotFriendRequest.Companion.parseFriendRequest
+import org.ntqqrev.acidify.struct.internal.parseFilteredFriendRequest
+import org.ntqqrev.acidify.struct.internal.parseFriendRequest
 
 /**
  * 发送好友戳一戳

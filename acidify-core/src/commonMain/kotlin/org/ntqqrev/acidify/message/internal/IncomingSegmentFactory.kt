@@ -17,11 +17,26 @@ import org.ntqqrev.acidify.internal.util.readUInt32BE
 import org.ntqqrev.acidify.message.BotIncomingSegment
 import org.ntqqrev.acidify.message.ImageSubType
 import org.ntqqrev.acidify.message.MessageScene
-import org.ntqqrev.acidify.message.internal.MessageParsingContext.Companion.buildSegments
 import kotlin.math.min
 
 internal interface IncomingSegmentFactory<T : BotIncomingSegment> {
     fun tryParse(ctx: MessageParsingContext): T?
+
+    companion object {
+        val factories = listOf(
+            Text,
+            Mention,
+            Face,
+            Reply,
+            Image,
+            Record,
+            Video,
+            File,
+            Forward,
+            MarketFace,
+            LightApp,
+        )
+    }
 
     object Text : IncomingSegmentFactory<BotIncomingSegment.Text> {
         override fun tryParse(ctx: MessageParsingContext): BotIncomingSegment.Text? {

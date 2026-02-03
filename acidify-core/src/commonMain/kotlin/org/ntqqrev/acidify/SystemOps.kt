@@ -74,6 +74,7 @@ suspend fun Bot.online(preloadContacts: Boolean = false) {
             if (signal != null) {
                 try {
                     val parsed = signal.parse(this@online, sso.response)
+                    logger.v { "由 ${sso.command} 解析出事件：$parsed" }
                     parsed.forEach { sharedEventFlow.emit(it) }
                 } catch (e: Exception) {
                     logger.e(e) { "处理信令 ${sso.command} 时出现错误" }
