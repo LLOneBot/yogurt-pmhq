@@ -1,7 +1,5 @@
 package org.ntqqrev.yogurt.api.handler
 
-import io.ktor.server.plugins.di.*
-import io.ktor.server.routing.*
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import org.ntqqrev.acidify.*
@@ -9,10 +7,11 @@ import org.ntqqrev.acidify.message.MessageScene
 import org.ntqqrev.milky.*
 import org.ntqqrev.yogurt.api.MilkyApiException
 import org.ntqqrev.yogurt.api.define
-import org.ntqqrev.yogurt.transform.*
+import org.ntqqrev.yogurt.transform.toMessageScene
+import org.ntqqrev.yogurt.transform.transformMessage
+import org.ntqqrev.yogurt.transform.transformSegment
 
 val SendPrivateMessage = ApiEndpoint.SendPrivateMessage.define {
-    val bot = application.dependencies.resolve<Bot>()
     bot.getFriend(it.userId)
         ?: throw MilkyApiException(-404, "Friend not found")
     val result = bot.sendFriendMessage(
@@ -35,7 +34,6 @@ val SendPrivateMessage = ApiEndpoint.SendPrivateMessage.define {
 }
 
 val SendGroupMessage = ApiEndpoint.SendGroupMessage.define {
-    val bot = application.dependencies.resolve<Bot>()
     bot.getGroup(it.groupId)
         ?: throw MilkyApiException(-404, "Group not found")
     val result = bot.sendGroupMessage(
@@ -58,7 +56,6 @@ val SendGroupMessage = ApiEndpoint.SendGroupMessage.define {
 }
 
 val RecallPrivateMessage = ApiEndpoint.RecallPrivateMessage.define {
-    val bot = application.dependencies.resolve<Bot>()
     bot.getFriend(it.userId)
         ?: throw MilkyApiException(-404, "Friend not found")
     bot.recallFriendMessage(
@@ -69,7 +66,6 @@ val RecallPrivateMessage = ApiEndpoint.RecallPrivateMessage.define {
 }
 
 val RecallGroupMessage = ApiEndpoint.RecallGroupMessage.define {
-    val bot = application.dependencies.resolve<Bot>()
     bot.getGroup(it.groupId)
         ?: throw MilkyApiException(-404, "Group not found")
     bot.recallGroupMessage(
@@ -80,7 +76,6 @@ val RecallGroupMessage = ApiEndpoint.RecallGroupMessage.define {
 }
 
 val GetMessage = ApiEndpoint.GetMessage.define {
-    val bot = application.dependencies.resolve<Bot>()
     val messages = when (it.messageScene.toMessageScene()) {
         MessageScene.FRIEND -> {
             bot.getFriend(it.peerId)
@@ -114,7 +109,6 @@ val GetMessage = ApiEndpoint.GetMessage.define {
 }
 
 val GetHistoryMessages = ApiEndpoint.GetHistoryMessages.define {
-    val bot = application.dependencies.resolve<Bot>()
     if (it.limit !in 1..30) {
         throw MilkyApiException(-400, "Limit must be between 1 and 30")
     }
@@ -149,14 +143,12 @@ val GetHistoryMessages = ApiEndpoint.GetHistoryMessages.define {
 }
 
 val GetResourceTempUrl = ApiEndpoint.GetResourceTempUrl.define {
-    val bot = application.dependencies.resolve<Bot>()
     GetResourceTempUrlOutput(
         url = bot.getDownloadUrl(it.resourceId)
     )
 }
 
 val GetForwardedMessages = ApiEndpoint.GetForwardedMessages.define {
-    val bot = application.dependencies.resolve<Bot>()
     val forwardedMessages = bot.getForwardedMessages(it.forwardId)
     val transformedMessages = forwardedMessages.map { msg ->
         IncomingForwardedMessage(
@@ -174,7 +166,6 @@ val GetForwardedMessages = ApiEndpoint.GetForwardedMessages.define {
 }
 
 val MarkMessageAsRead = ApiEndpoint.MarkMessageAsRead.define {
-    val bot = application.dependencies.resolve<Bot>()
     when (it.messageScene.toMessageScene()) {
         MessageScene.FRIEND -> {
             bot.getFriend(it.peerId) ?: throw MilkyApiException(-404, "Friend not found")

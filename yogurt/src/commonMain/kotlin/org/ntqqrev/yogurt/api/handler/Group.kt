@@ -1,7 +1,5 @@
 package org.ntqqrev.yogurt.api.handler
 
-import io.ktor.server.plugins.di.*
-import io.ktor.server.routing.*
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import org.ntqqrev.acidify.*
@@ -14,7 +12,6 @@ import org.ntqqrev.yogurt.transform.transformEssenceMessage
 import org.ntqqrev.yogurt.util.resolveUri
 
 val SetGroupName = ApiEndpoint.SetGroupName.define {
-    val bot = application.dependencies.resolve<Bot>()
     bot.getGroup(it.groupId)
         ?: throw MilkyApiException(-404, "Group not found")
     bot.setGroupName(it.groupId, it.newGroupName)
@@ -22,7 +19,6 @@ val SetGroupName = ApiEndpoint.SetGroupName.define {
 }
 
 val SetGroupAvatar = ApiEndpoint.SetGroupAvatar.define {
-    val bot = application.dependencies.resolve<Bot>()
     bot.getGroup(it.groupId)
         ?: throw MilkyApiException(-404, "Group not found")
     val imageData = resolveUri(it.imageUri)
@@ -31,7 +27,6 @@ val SetGroupAvatar = ApiEndpoint.SetGroupAvatar.define {
 }
 
 val SetGroupMemberCard = ApiEndpoint.SetGroupMemberCard.define {
-    val bot = application.dependencies.resolve<Bot>()
     bot.getGroup(it.groupId)
         ?: throw MilkyApiException(-404, "Group not found")
     bot.setGroupMemberCard(it.groupId, it.userId, it.card)
@@ -39,7 +34,6 @@ val SetGroupMemberCard = ApiEndpoint.SetGroupMemberCard.define {
 }
 
 val SetGroupMemberSpecialTitle = ApiEndpoint.SetGroupMemberSpecialTitle.define {
-    val bot = application.dependencies.resolve<Bot>()
     bot.getGroup(it.groupId)
         ?: throw MilkyApiException(-404, "Group not found")
     bot.setGroupMemberSpecialTitle(it.groupId, it.userId, it.specialTitle)
@@ -47,7 +41,6 @@ val SetGroupMemberSpecialTitle = ApiEndpoint.SetGroupMemberSpecialTitle.define {
 }
 
 val SetGroupMemberAdmin = ApiEndpoint.SetGroupMemberAdmin.define {
-    val bot = application.dependencies.resolve<Bot>()
     bot.getGroup(it.groupId)
         ?: throw MilkyApiException(-404, "Group not found")
     bot.setGroupMemberAdmin(it.groupId, it.userId, it.isSet)
@@ -55,7 +48,6 @@ val SetGroupMemberAdmin = ApiEndpoint.SetGroupMemberAdmin.define {
 }
 
 val SetGroupMemberMute = ApiEndpoint.SetGroupMemberMute.define {
-    val bot = application.dependencies.resolve<Bot>()
     bot.getGroup(it.groupId)
         ?: throw MilkyApiException(-404, "Group not found")
     bot.setGroupMemberMute(it.groupId, it.userId, it.duration)
@@ -63,7 +55,6 @@ val SetGroupMemberMute = ApiEndpoint.SetGroupMemberMute.define {
 }
 
 val SetGroupWholeMute = ApiEndpoint.SetGroupWholeMute.define {
-    val bot = application.dependencies.resolve<Bot>()
     bot.getGroup(it.groupId)
         ?: throw MilkyApiException(-404, "Group not found")
     bot.setGroupWholeMute(it.groupId, it.isMute)
@@ -71,7 +62,6 @@ val SetGroupWholeMute = ApiEndpoint.SetGroupWholeMute.define {
 }
 
 val KickGroupMember = ApiEndpoint.KickGroupMember.define {
-    val bot = application.dependencies.resolve<Bot>()
     bot.getGroup(it.groupId)
         ?: throw MilkyApiException(-404, "Group not found")
     bot.kickGroupMember(it.groupId, it.userId, it.rejectAddRequest)
@@ -79,7 +69,6 @@ val KickGroupMember = ApiEndpoint.KickGroupMember.define {
 }
 
 val GetGroupAnnouncements = ApiEndpoint.GetGroupAnnouncements.define {
-    val bot = application.dependencies.resolve<Bot>()
     bot.getGroup(it.groupId)
         ?: throw MilkyApiException(-404, "Group not found")
     val announcements = bot.getGroupAnnouncements(it.groupId)
@@ -98,7 +87,6 @@ val GetGroupAnnouncements = ApiEndpoint.GetGroupAnnouncements.define {
 }
 
 val SendGroupAnnouncement = ApiEndpoint.SendGroupAnnouncement.define {
-    val bot = application.dependencies.resolve<Bot>()
     bot.getGroup(it.groupId)
         ?: throw MilkyApiException(-404, "Group not found")
     bot.sendGroupAnnouncement(it.groupId, it.content, null)
@@ -106,7 +94,6 @@ val SendGroupAnnouncement = ApiEndpoint.SendGroupAnnouncement.define {
 }
 
 val DeleteGroupAnnouncement = ApiEndpoint.DeleteGroupAnnouncement.define {
-    val bot = application.dependencies.resolve<Bot>()
     bot.getGroup(it.groupId)
         ?: throw MilkyApiException(-404, "Group not found")
     bot.deleteGroupAnnouncement(it.groupId, it.announcementId)
@@ -114,7 +101,6 @@ val DeleteGroupAnnouncement = ApiEndpoint.DeleteGroupAnnouncement.define {
 }
 
 val GetGroupEssenceMessages = ApiEndpoint.GetGroupEssenceMessages.define {
-    val bot = application.dependencies.resolve<Bot>()
     bot.getGroup(it.groupId)
         ?: throw MilkyApiException(-404, "Group not found")
     val essenceMessageResult = bot.getGroupEssenceMessages(
@@ -131,7 +117,6 @@ val GetGroupEssenceMessages = ApiEndpoint.GetGroupEssenceMessages.define {
 }
 
 val SetGroupEssenceMessage = ApiEndpoint.SetGroupEssenceMessage.define {
-    val bot = application.dependencies.resolve<Bot>()
     bot.getGroup(it.groupId)
         ?: throw MilkyApiException(-404, "Group not found")
     bot.setGroupEssenceMessage(it.groupId, it.messageSeq, it.isSet)
@@ -139,7 +124,6 @@ val SetGroupEssenceMessage = ApiEndpoint.SetGroupEssenceMessage.define {
 }
 
 val QuitGroup = ApiEndpoint.QuitGroup.define {
-    val bot = application.dependencies.resolve<Bot>()
     bot.getGroup(it.groupId)
         ?: throw MilkyApiException(-404, "Group not found")
     bot.quitGroup(it.groupId)
@@ -147,7 +131,6 @@ val QuitGroup = ApiEndpoint.QuitGroup.define {
 }
 
 val SendGroupMessageReaction = ApiEndpoint.SendGroupMessageReaction.define {
-    val bot = application.dependencies.resolve<Bot>()
     bot.getGroup(it.groupId)
         ?: throw MilkyApiException(-404, "Group not found")
     bot.setGroupMessageReaction(it.groupId, it.messageSeq, it.reaction, it.isAdd)
@@ -155,7 +138,6 @@ val SendGroupMessageReaction = ApiEndpoint.SendGroupMessageReaction.define {
 }
 
 val SendGroupNudge = ApiEndpoint.SendGroupNudge.define {
-    val bot = application.dependencies.resolve<Bot>()
     bot.getGroup(it.groupId)
         ?: throw MilkyApiException(-404, "Group not found")
     bot.sendGroupNudge(it.groupId, it.userId)
@@ -163,7 +145,6 @@ val SendGroupNudge = ApiEndpoint.SendGroupNudge.define {
 }
 
 val GetGroupNotifications = ApiEndpoint.GetGroupNotifications.define {
-    val bot = application.dependencies.resolve<Bot>()
     val (notifications, nextSeq) = bot.getGroupNotifications(
         startSequence = it.startNotificationSeq,
         isFiltered = it.isFiltered,
@@ -176,7 +157,6 @@ val GetGroupNotifications = ApiEndpoint.GetGroupNotifications.define {
 }
 
 val AcceptGroupRequest = ApiEndpoint.AcceptGroupRequest.define {
-    val bot = application.dependencies.resolve<Bot>()
     bot.setGroupRequest(
         groupUin = it.groupId,
         sequence = it.notificationSeq,
@@ -188,7 +168,6 @@ val AcceptGroupRequest = ApiEndpoint.AcceptGroupRequest.define {
 }
 
 val RejectGroupRequest = ApiEndpoint.RejectGroupRequest.define {
-    val bot = application.dependencies.resolve<Bot>()
     bot.setGroupRequest(
         groupUin = it.groupId,
         sequence = it.notificationSeq,
@@ -201,7 +180,6 @@ val RejectGroupRequest = ApiEndpoint.RejectGroupRequest.define {
 }
 
 val AcceptGroupInvitation = ApiEndpoint.AcceptGroupInvitation.define {
-    val bot = application.dependencies.resolve<Bot>()
     bot.setGroupInvitation(
         groupUin = it.groupId,
         invitationSeq = it.invitationSeq,
@@ -211,7 +189,6 @@ val AcceptGroupInvitation = ApiEndpoint.AcceptGroupInvitation.define {
 }
 
 val RejectGroupInvitation = ApiEndpoint.RejectGroupInvitation.define {
-    val bot = application.dependencies.resolve<Bot>()
     bot.setGroupInvitation(
         groupUin = it.groupId,
         invitationSeq = it.invitationSeq,

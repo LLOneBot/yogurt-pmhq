@@ -17,15 +17,14 @@ import kotlin.time.DurationUnit
 import kotlin.time.measureTime
 
 inline fun <reified T : Any, reified R : Any> ApiEndpoint<T, R>.define(
-    crossinline handler: suspend Route.(T) -> R
-) = object : MilkyApiHandler<T, R>(this) {
-    override suspend fun Route.call(payload: T): R = handler(payload)
-}
+    noinline handler: suspend MilkyApiContext.(T) -> R
+) = MilkyApiHandler(this.path, handler)
 
 private inline fun <reified T : Any, reified R : Any> Route.serve(
     handler: MilkyApiHandler<T, R>
 ) = post(handler.path) {
     val bot = application.dependencies.resolve<Bot>()
+    val context = MilkyApiContext(bot, application)
     val logger = bot.createLogger("HttpModule")
     try {
         val payload = call.receive<T>()
@@ -33,7 +32,7 @@ private inline fun <reified T : Any, reified R : Any> Route.serve(
             try {
                 var result: R
                 val duration = measureTime {
-                    result = with(handler) { call(payload) }
+                    result = with(handler) { context.callHandler(payload) }
                 }
                 logger.i {
                     "${call.request.local.remoteAddress} 调用 API ${handler.path}（成功 ${
