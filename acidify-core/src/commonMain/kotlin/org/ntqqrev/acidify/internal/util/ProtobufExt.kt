@@ -4,12 +4,12 @@ import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.encodeToByteArray
 import kotlinx.serialization.protobuf.ProtoBuf
 
-val protobufModule = ProtoBuf {
+internal val protobufModule = ProtoBuf {
     // Configuration can be added here if needed
 }
 
-inline fun <reified T> ByteArray.pbDecode(): T =
+internal inline fun <reified T> ByteArray.pbDecode(): T =
     protobufModule.decodeFromByteArray(this)
 
-inline fun <reified T> T.pbEncode(): ByteArray =
+internal inline fun <reified T> T.pbEncode(): ByteArray =
     protobufModule.encodeToByteArray(this)
