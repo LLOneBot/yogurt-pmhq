@@ -3,9 +3,11 @@ package org.ntqqrev.acidify.common
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.*
+import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.Serializable
 
 /**
@@ -15,6 +17,9 @@ import kotlinx.serialization.Serializable
  */
 class UrlSignProvider(val url: String, val httpProxy: String? = null) : SignProvider {
     private val client = HttpClient {
+        install(ContentNegotiation) {
+            json()
+        }
         engine {
             if (!httpProxy.isNullOrEmpty()) {
                 proxy = ProxyBuilder.http(httpProxy)
