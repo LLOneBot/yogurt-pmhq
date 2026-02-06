@@ -38,7 +38,7 @@ kotlin {
             implementation(libs.bundles.ktor.client)
             implementation(libs.ktor.network)
             implementation(libs.ktor.serialization.kotlinx.json)
-            implementation(libs.korlibs.compression)
+            implementation(libs.kompress)
             implementation(libs.bundles.xmlutil)
         }
         commonTest.dependencies {

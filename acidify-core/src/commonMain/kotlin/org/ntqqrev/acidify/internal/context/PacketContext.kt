@@ -1,11 +1,10 @@
 package org.ntqqrev.acidify.internal.context
 
+import dev.karmakrafts.kompress.Inflater
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
-import korlibs.io.compression.deflate.ZLib
-import korlibs.io.compression.uncompress
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -227,7 +226,7 @@ internal class PacketContext(client: LagrangeClient) : AbstractContext(client) {
         var payload = reader.readPrefixedBytes(Prefix.UINT_32 or Prefix.INCLUDE_PREFIX)
 
         if (isCompressed) {
-            payload = ZLib.uncompress(payload)
+            payload = Inflater.inflate(payload, raw = false)
         }
 
         return if (retCode == 0) {

@@ -1,7 +1,6 @@
 package org.ntqqrev.acidify.message.internal
 
-import korlibs.io.compression.deflate.ZLib
-import korlibs.io.compression.uncompress
+import dev.karmakrafts.kompress.Inflater
 import kotlinx.serialization.decodeFromString
 import org.ntqqrev.acidify.internal.json.message.IncomingForwardBody
 import org.ntqqrev.acidify.internal.json.message.LightAppPayload
@@ -239,8 +238,9 @@ internal interface IncomingSegmentFactory<T : BotIncomingSegment> {
             val forward = ctx.tryPeekType { richMsg } ?: return null
             ctx.consume()
             val bytesTemplate1 = forward.bytesTemplate1
-            val xml = ZLib.uncompress(
-                bytesTemplate1.sliceArray(1 until bytesTemplate1.size)
+            val xml = Inflater.inflate(
+                bytesTemplate1.sliceArray(1 until bytesTemplate1.size),
+                raw = false
             ).decodeToString()
             val body = IncomingForwardBody.xmlModule.decodeFromString<IncomingForwardBody>(xml)
             val titles = body.items[0].titles
@@ -279,7 +279,10 @@ internal interface IncomingSegmentFactory<T : BotIncomingSegment> {
                 ctx.skip()
             }
             val compressed = elem.bytesData
-            val json = ZLib.uncompress(compressed.sliceArray(1 until compressed.size)).decodeToString()
+            val json = Inflater.inflate(
+                compressed.sliceArray(1 until compressed.size),
+                raw = false
+            ).decodeToString()
             val appName = LightAppPayload.jsonModule.decodeFromString<LightAppPayload>(json).app
             return BotIncomingSegment.LightApp(
                 appName = appName,

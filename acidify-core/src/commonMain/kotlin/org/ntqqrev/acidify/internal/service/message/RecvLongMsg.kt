@@ -1,11 +1,10 @@
 package org.ntqqrev.acidify.internal.service.message
 
-import korlibs.io.compression.deflate.GZIP
-import korlibs.io.compression.uncompress
 import org.ntqqrev.acidify.internal.LagrangeClient
 import org.ntqqrev.acidify.internal.proto.message.CommonMessage
 import org.ntqqrev.acidify.internal.proto.message.action.*
 import org.ntqqrev.acidify.internal.service.Service
+import org.ntqqrev.acidify.internal.util.gzipUncompress
 import org.ntqqrev.acidify.internal.util.pbDecode
 import org.ntqqrev.acidify.internal.util.pbEncode
 
@@ -39,7 +38,7 @@ internal object RecvLongMsg :
         val compressedPayload = resp.recvResp?.payload
             ?: throw IllegalStateException("No payload in LongMsgInterfaceResp")
 
-        val decompressed = GZIP.uncompress(compressedPayload)
+        val decompressed = gzipUncompress(compressedPayload)
         val content = decompressed.pbDecode<PbMultiMsgTransmit>()
 
         return content.items

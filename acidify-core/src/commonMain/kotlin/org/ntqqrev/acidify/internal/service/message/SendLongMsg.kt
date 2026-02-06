@@ -1,11 +1,10 @@
 package org.ntqqrev.acidify.internal.service.message
 
-import korlibs.io.compression.compress
-import korlibs.io.compression.deflate.GZIP
 import org.ntqqrev.acidify.internal.LagrangeClient
 import org.ntqqrev.acidify.internal.proto.message.CommonMessage
 import org.ntqqrev.acidify.internal.proto.message.action.*
 import org.ntqqrev.acidify.internal.service.Service
+import org.ntqqrev.acidify.internal.util.gzipCompress
 import org.ntqqrev.acidify.internal.util.pbDecode
 import org.ntqqrev.acidify.internal.util.pbEncode
 import org.ntqqrev.acidify.message.MessageScene
@@ -38,7 +37,7 @@ internal object SendLongMsg :
             }
         )
 
-        val compressedContent = GZIP.compress(content.pbEncode())
+        val compressedContent = gzipCompress(content.pbEncode())
 
         val longMsg = LongMsgInterfaceReq(
             sendReq = LongMsgSendReq(

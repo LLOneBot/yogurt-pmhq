@@ -1,7 +1,6 @@
 package org.ntqqrev.acidify.message.internal
 
-import korlibs.io.compression.compress
-import korlibs.io.compression.deflate.ZLib
+import dev.karmakrafts.kompress.Deflater
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -463,7 +462,7 @@ internal class MessageBuildingContext(
         val str = Json.encodeToString(lightApp)
         val buffer = Buffer()
         buffer.writeByte(0x01)
-        buffer.write(ZLib.compress(str.encodeToByteArray()))
+        buffer.write(Deflater.deflate(str.encodeToByteArray(), raw = false))
 
         Elem(
             lightAppElem = LightAppElem(
