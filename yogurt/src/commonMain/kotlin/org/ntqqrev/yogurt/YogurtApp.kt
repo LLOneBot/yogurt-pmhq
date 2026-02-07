@@ -15,8 +15,10 @@ import io.ktor.server.plugins.di.*
 import io.ktor.server.routing.*
 import io.ktor.server.sse.*
 import io.ktor.server.websocket.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
@@ -37,7 +39,7 @@ import org.ntqqrev.yogurt.event.configureMilkyEventAuth
 import org.ntqqrev.yogurt.event.configureMilkyEventSse
 import org.ntqqrev.yogurt.event.configureMilkyEventWebSocket
 import org.ntqqrev.yogurt.event.configureMilkyEventWebhook
-import org.ntqqrev.yogurt.script.Script
+import org.ntqqrev.yogurt.script.createScriptEnvironment
 import org.ntqqrev.yogurt.script.loadScripts
 import org.ntqqrev.yogurt.transform.transformAcidifyEvent
 import org.ntqqrev.yogurt.util.*
@@ -121,6 +123,7 @@ object YogurtApp {
             minLogLevel = config.logging.coreLogLevel,
             logHandler = logHandler
         )
+        val qjs = createScriptEnvironment()
 
         install(ContentNegotiation) {
             json(milkyJsonModule)
@@ -152,6 +155,7 @@ object YogurtApp {
                         started = SharingStarted.Lazily,
                     )
             }
+            provide { qjs } cleanup { it.close() }
         }
 
         routing {
@@ -174,21 +178,6 @@ object YogurtApp {
         if (!SystemFileSystem.exists(scriptsPath)) {
             SystemFileSystem.createDirectories(scriptsPath)
         }
-        val scripts = SystemFileSystem.list(scriptsPath)
-            .filter { it.name.endsWith(".yogurtx.js") }
-            .map {
-                async {
-                    Script(
-                        name = it.name,
-                        content = SystemFileSystem.source(it).buffered().use { r ->
-                            withContext(Dispatchers.IO) {
-                                r.readString()
-                            }
-                        }
-                    )
-                }
-            }
-            .awaitAll()
 
         monitor.subscribe(ApplicationStarted) {
             if (config.webhookConfig.url.isNotEmpty()) {
@@ -200,9 +189,7 @@ object YogurtApp {
 
             launch {
                 bot.login(preloadContacts = config.preloadContacts)
-                if (scripts.isNotEmpty()) {
-                    loadScripts(scripts)
-                }
+                loadScripts()
             }
         }
     }
