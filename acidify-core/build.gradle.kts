@@ -22,10 +22,6 @@ kotlin {
         compilerOptions {
             freeCompilerArgs.add("-Xes-long-as-bigint")
         }
-        compilations["main"].packageJson {
-            name = "@acidify/core"
-            customField("description", "Kotlin NTQQ protocol implementation, ported to JS")
-        }
     }
 
     sourceSets {
