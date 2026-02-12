@@ -3,6 +3,7 @@ package org.ntqqrev.yogurt.api.handler
 import org.ntqqrev.acidify.*
 import org.ntqqrev.milky.*
 import org.ntqqrev.yogurt.BuildKonfig
+import org.ntqqrev.yogurt.YogurtApp.config
 import org.ntqqrev.yogurt.api.MilkyApiException
 import org.ntqqrev.yogurt.api.define
 import org.ntqqrev.yogurt.transform.toMilkyEntity
@@ -20,7 +21,9 @@ private fun String.toMilkyProtocolOs() = when (this) {
     "Windows" -> "windows"
     "Linux" -> "linux"
     "Mac" -> "macos"
-    else -> "linux"
+    "AndroidPhone" -> "android_phone"
+    "AndroidPad" -> "android_pad"
+    else -> throw MilkyApiException(-400, "Unknown protocol OS: $this")
 }
 
 val GetImplInfo = ApiEndpoint.GetImplInfo.define {
@@ -33,7 +36,7 @@ val GetImplInfo = ApiEndpoint.GetImplInfo.define {
         },
         qqProtocolType = when (bot) {
             is Bot -> bot.appInfo.os
-            is AndroidBot -> bot.appInfo.os // TODO: resolve Phone/Pad
+            is AndroidBot -> config.protocol.os
         }.toMilkyProtocolOs(),
         milkyVersion = milkyVersion,
     )

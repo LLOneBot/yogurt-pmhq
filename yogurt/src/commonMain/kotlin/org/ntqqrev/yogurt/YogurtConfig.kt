@@ -15,6 +15,8 @@ import org.ntqqrev.acidify.logging.LogLevel
 @Serializable
 class YogurtConfig(
     val signApiUrl: String = "",
+    val protocol: Protocol = Protocol(),
+    val androidCredentials: AndroidCredentials = AndroidCredentials(),
     val reportSelfMessage: Boolean = true,
     val preloadContacts: Boolean = false,
     val transformIncomingMFaceToImage: Boolean = false,
@@ -23,6 +25,18 @@ class YogurtConfig(
     val logging: LoggingConfig = LoggingConfig(),
     val skipSecurityCheck: Boolean = false,
 ) {
+    @Serializable
+    class Protocol(
+        val os: String = "Linux",
+        val version: String = "fetched",
+    )
+
+    @Serializable
+    class AndroidCredentials(
+        val uin: Long = 0L,
+        val password: String = "",
+    )
+
     @Serializable
     class LoggingConfig(
         val ansiLevel: AnsiLevel = AnsiLevel.ANSI256,

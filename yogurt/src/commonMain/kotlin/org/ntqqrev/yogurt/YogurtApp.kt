@@ -17,21 +17,9 @@ import io.ktor.server.routing.*
 import io.ktor.server.sse.*
 import io.ktor.server.websocket.*
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
-import kotlinx.io.readString
-import org.ntqqrev.acidify.AbstractBot
-import org.ntqqrev.acidify.Bot
-import org.ntqqrev.acidify.common.AppInfo
-import org.ntqqrev.acidify.common.SessionStore
-import org.ntqqrev.acidify.common.UrlSignProvider
-import org.ntqqrev.acidify.login
-import org.ntqqrev.acidify.offline
-import org.ntqqrev.milky.Event
 import org.ntqqrev.milky.milkyJsonModule
 import org.ntqqrev.milky.milkyVersion
 import org.ntqqrev.yogurt.api.configureMilkyApiAuth
@@ -43,7 +31,6 @@ import org.ntqqrev.yogurt.event.configureMilkyEventWebSocket
 import org.ntqqrev.yogurt.event.configureMilkyEventWebhook
 import org.ntqqrev.yogurt.script.createScriptEnvironment
 import org.ntqqrev.yogurt.script.loadScripts
-import org.ntqqrev.yogurt.transform.transformAcidifyEvent
 import org.ntqqrev.yogurt.util.*
 
 object YogurtApp {
@@ -106,26 +93,13 @@ object YogurtApp {
             delay(10_000)
         }
 
-        val signProvider = UrlSignProvider(config.signApiUrl)
-        val sessionStore: SessionStore = if (SystemFileSystem.exists(sessionStorePath)) {
-            SystemFileSystem.source(sessionStorePath).buffered().use {
-                SessionStore.fromJson(it.readString())
-            }
-        } else SessionStore.empty()
-        val appInfo: AppInfo = signProvider.getAppInfo() ?: run {
-            t.println("获取 AppInfo 失败，使用内置默认值")
-            AppInfo.Bundled.Linux
+        when {
+            isPC -> initializePC()
+            isAndroid -> initializeAndroid()
+            else -> throw IllegalStateException(
+                "不支持的协议 ${config.protocol.os}，当前仅支持 Windows、Mac、Linux、AndroidPhone、AndroidPad"
+            )
         }
-        t.println("使用协议 ${appInfo.os} ${appInfo.currentVersion} (AppId: ${appInfo.subAppId})")
-        val bot = Bot.create(
-            appInfo = appInfo,
-            sessionStore = sessionStore,
-            signProvider = signProvider,
-            scope = this@embeddedServer, // application is a CoroutineScope
-            minLogLevel = config.logging.coreLogLevel,
-            logHandler = logHandler
-        )
-        val qjs = createScriptEnvironment()
 
         install(ContentNegotiation) {
             json(milkyJsonModule)
@@ -144,17 +118,8 @@ object YogurtApp {
             allowHeader(HttpHeaders.Authorization)
         }
 
+        val qjs = createScriptEnvironment()
         dependencies {
-            provide<AbstractBot> { bot } cleanup { runBlocking { it.offline() } }
-            provide<SharedFlow<Event>> {
-                bot.eventFlow
-                    .map(this@embeddedServer::transformAcidifyEvent)
-                    .filterNotNull()
-                    .shareIn(
-                        scope = this@embeddedServer,
-                        started = SharingStarted.Lazily,
-                    )
-            }
             provide<QuickJs> { qjs } cleanup { it.close() }
         }
 
@@ -188,7 +153,7 @@ object YogurtApp {
             configureEventLogging()
 
             launch {
-                bot.login(preloadContacts = config.preloadContacts)
+                botLogin()
                 loadScripts()
             }
         }

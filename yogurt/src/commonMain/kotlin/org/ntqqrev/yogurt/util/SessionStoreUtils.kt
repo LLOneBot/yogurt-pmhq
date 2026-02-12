@@ -8,7 +8,9 @@ import kotlinx.io.buffered
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.writeString
 import org.ntqqrev.acidify.AbstractBot
+import org.ntqqrev.acidify.event.AndroidSessionStoreUpdatedEvent
 import org.ntqqrev.acidify.event.SessionStoreUpdatedEvent
+import org.ntqqrev.yogurt.androidSessionStorePath
 import org.ntqqrev.yogurt.sessionStorePath
 
 fun Application.configureSessionStoreAutoSave() = launch {
@@ -17,6 +19,12 @@ fun Application.configureSessionStoreAutoSave() = launch {
     bot.eventFlow.filterIsInstance<SessionStoreUpdatedEvent>().collect {
         logger.i { "SessionStore 已更新，正在保存至文件..." }
         SystemFileSystem.sink(sessionStorePath).buffered().use { source ->
+            source.writeString(it.sessionStore.toJson())
+        }
+    }
+    bot.eventFlow.filterIsInstance<AndroidSessionStoreUpdatedEvent>().collect {
+        logger.i { "Android SessionStore 已更新，正在保存至文件..." }
+        SystemFileSystem.sink(androidSessionStorePath).buffered().use { source ->
             source.writeString(it.sessionStore.toJson())
         }
     }
