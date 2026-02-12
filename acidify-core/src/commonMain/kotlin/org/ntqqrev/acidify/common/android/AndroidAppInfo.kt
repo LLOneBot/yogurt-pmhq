@@ -110,7 +110,7 @@ class AndroidAppInfo(
     companion object {
         private val jsonModule = Json { ignoreUnknownKeys = true }
 
-        fun fromJson(json: String): AppInfo = jsonModule.decodeFromString(json)
+        fun fromJson(json: String): AndroidAppInfo = jsonModule.decodeFromString(json)
     }
 
     fun toJson() = jsonModule.encodeToString(this)
