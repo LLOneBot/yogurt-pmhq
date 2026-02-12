@@ -33,8 +33,8 @@ kotlin {
             }
         }
     }
+}
 
-    tasks.withType<JavaExec> {
-        standardInput = System.`in`
-    }
+tasks.withType<JavaExec> {
+    standardInput = System.`in`
 }
