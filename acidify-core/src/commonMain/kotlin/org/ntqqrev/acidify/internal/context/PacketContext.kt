@@ -4,26 +4,26 @@ import dev.karmakrafts.kompress.Inflater
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
 import io.ktor.utils.io.*
-import io.ktor.utils.io.core.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.io.Buffer
 import kotlinx.io.IOException
 import kotlinx.io.readByteArray
-import org.ntqqrev.acidify.common.SignResult
 import org.ntqqrev.acidify.common.SsoResponse
+import org.ntqqrev.acidify.internal.AbstractClient
+import org.ntqqrev.acidify.internal.KuromeClient
 import org.ntqqrev.acidify.internal.LagrangeClient
-import org.ntqqrev.acidify.internal.crypto.tea.TeaProvider
+import org.ntqqrev.acidify.internal.crypto.tea.TEA
 import org.ntqqrev.acidify.internal.proto.system.SsoReservedFields
 import org.ntqqrev.acidify.internal.proto.system.SsoSecureInfo
-import org.ntqqrev.acidify.internal.service.system.BotOnline
+import org.ntqqrev.acidify.internal.service.EncryptType
+import org.ntqqrev.acidify.internal.service.RequestType
+import org.ntqqrev.acidify.internal.service.system.AndroidHeartbeat
 import org.ntqqrev.acidify.internal.service.system.Heartbeat
 import org.ntqqrev.acidify.internal.util.*
-import kotlin.random.Random
 
-internal class PacketContext(client: LagrangeClient) : AbstractContext(client) {
-    private var sequence = Random.nextInt(0x10000, 0x20000)
+internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
     private val host = "msfwifi.3g.qq.com"
     private val port = 8080
     private val selectorManager = SelectorManager(client.coroutineContext)
@@ -34,30 +34,35 @@ internal class PacketContext(client: LagrangeClient) : AbstractContext(client) {
     private val headerLength = 4
     private val sendPacketMutex = Mutex()
     private val mapQueryMutex = Mutex()
-    private val signRequiredCommand = setOf(
-        "MessageSvc.PbSendMsg",
-        "wtlogin.trans_emp",
-        "wtlogin.login",
-        "trpc.login.ecdh.EcdhService.SsoKeyExchange",
-        "trpc.login.ecdh.EcdhService.SsoNTLoginPasswordLogin",
-        "trpc.login.ecdh.EcdhService.SsoNTLoginEasyLogin",
-        "trpc.login.ecdh.EcdhService.SsoNTLoginPasswordLoginNewDevice",
-        "trpc.login.ecdh.EcdhService.SsoNTLoginEasyLoginUnusualDevice",
-        "trpc.login.ecdh.EcdhService.SsoNTLoginPasswordLoginUnusualDevice",
-        "OidbSvcTrpcTcp.0x6d9_4"
-    )
     private var heartbeatJob: Job? = null
-    private val logger = client.createLogger(this)
 
     override suspend fun postOnline() {
-        heartbeatJob = client.launch {
-            while (isActive) {
-                try {
-                    client.callService(Heartbeat)
-                } catch (e: Exception) {
-                    logger.w(e) { "心跳包发送失败" }
+        heartbeatJob = when (client) {
+            is LagrangeClient -> client.launch {
+                while (isActive) {
+                    try {
+                        client.callService(Heartbeat)
+                    } catch (e: Exception) {
+                        logger.w(e) { "心跳包发送失败" }
+                    }
+                    delay(270_000L) // 4.5min
                 }
-                delay(270_000L) // 4.5min
+            }
+            is KuromeClient -> client.launch {
+                var aliveCount = 0
+                while (isActive) {
+                    aliveCount++
+                    try {
+                        client.callService(AndroidHeartbeat)
+                        if (aliveCount % 27 == 0) {
+                            client.callService(Heartbeat) // 270s per Heartbeat
+                            aliveCount = 0
+                        }
+                    } catch (e: Exception) {
+                        logger.w(e) { "心跳包发送失败" }
+                    }
+                    delay(10_000L) // 10s
+                }
             }
         }
     }
@@ -77,7 +82,7 @@ internal class PacketContext(client: LagrangeClient) : AbstractContext(client) {
                         client.launch(CoroutineExceptionHandler { _, t ->
                             logger.e(t) { "发送上线包时出现错误" }
                         }) {
-                            client.callService(BotOnline)
+                            client.sendOnlinePacket()
                             logger.i { "上线包发送成功，重连完成" }
                             client.doPostOnlineLogic()
                         }
@@ -118,19 +123,36 @@ internal class PacketContext(client: LagrangeClient) : AbstractContext(client) {
         logger.d { "已连接到 $host:$port" }
     }
 
-    suspend fun sendPacket(cmd: String, payload: ByteArray, timeoutMillis: Long): SsoResponse {
-        val sequence = this.sequence++
-        val sso = buildSso(cmd, payload, sequence)
-        val service = buildService(sso)
+    suspend inline fun sendPacket(
+        command: String,
+        sequence: Int,
+        payload: ByteArray,
+        requestType: RequestType,
+        encryptType: EncryptType,
+        timeoutMillis: Long,
+        ssoSecureInfo: SsoSecureInfo?
+    ): SsoResponse {
+        val packet = when (requestType) {
+            RequestType.D2Auth -> client.buildProtocol12(
+                command = command,
+                payload = payload,
+                sequence = sequence,
+                ssoSecureInfo = ssoSecureInfo,
+                encryptType = encryptType,
+            )
 
+            RequestType.Simple -> client.buildProtocol13(
+                command = command,
+                payload = payload,
+                sequence = sequence,
+                ssoSecureInfo = ssoSecureInfo,
+                encryptType = encryptType,
+            )
+        }
         val deferred = CompletableDeferred<SsoResponse>()
         mapQueryMutex.withLock { pending[sequence] = deferred }
-
-        sendPacketMutex.withLock {
-            output.writePacket(service)
-        }
-        logger.v { "[seq=$sequence] -> $cmd" }
-
+        sendPacketMutex.withLock { output.writePacket(packet) }
+        logger.v { "[seq=$sequence] -> $command" }
         return try {
             withTimeout(timeoutMillis) { deferred.await() }
         } catch (e: Exception) {
@@ -144,8 +166,7 @@ internal class PacketContext(client: LagrangeClient) : AbstractContext(client) {
             val header = input.readByteArray(headerLength)
             val packetLength = header.readUInt32BE(0)
             val packet = input.readByteArray(packetLength.toInt() - 4)
-            val service = parseService(packet)
-            val sso = parseSso(service)
+            val sso = client.parseSsoFrame(packet)
             logger.v { "[seq=${sso.sequence}] <- ${sso.command} (code=${sso.retCode})" }
             mapQueryMutex.withLock { pending.remove(sso.sequence) }.also {
                 if (it != null) {
@@ -157,64 +178,133 @@ internal class PacketContext(client: LagrangeClient) : AbstractContext(client) {
         }
     }
 
-    private fun buildService(sso: ByteArray): Buffer {
-        val packet = Buffer()
-
-        packet.barrier(Prefix.UINT_32 or Prefix.INCLUDE_PREFIX) {
-            writeInt(12)
-            writeByte(if (client.sessionStore.d2.isEmpty()) 2 else 1)
-            writeBytes(client.sessionStore.d2, Prefix.UINT_32 or Prefix.INCLUDE_PREFIX)
-            writeByte(0) // unknown
-            writeString(client.sessionStore.uin.toString(), Prefix.UINT_32 or Prefix.INCLUDE_PREFIX)
-            writeBytes(TeaProvider.encrypt(sso, client.sessionStore.d2Key))
+    private suspend fun cleanupPendingRequests(error: Throwable) {
+        val pendingCount = mapQueryMutex.withLock { pending.size }
+        if (pendingCount > 0) {
+            logger.w { "清理 $pendingCount 个待处理的请求" }
+            mapQueryMutex.withLock {
+                pending.forEach { (_, deferred) ->
+                    deferred.completeExceptionally(
+                        IOException("连接已断开: ${error.message}", error)
+                    )
+                }
+                pending.clear()
+            }
         }
-
-        return packet
     }
 
-    val buildSsoFixedBytes = byteArrayOf(
+    // Packet building
+
+    private val buildSsoFixedBytes = byteArrayOf(
         0x02, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00,
     )
 
-    private suspend fun buildSso(command: String, payload: ByteArray, sequence: Int): ByteArray {
-        val packet = Buffer()
-        val ssoReserved = buildSsoReserved(command, payload, sequence)
+    private fun AbstractClient.buildSsoReserved(secureInfo: SsoSecureInfo?) = when (this) {
+        is LagrangeClient -> SsoReservedFields(
+            trace = generateTrace(),
+            uid = uid,
+            secureInfo = secureInfo,
+        )
 
-        packet.barrier(Prefix.UINT_32 or Prefix.INCLUDE_PREFIX) {
+        is KuromeClient -> SsoReservedFields(
+            trace = generateTrace(),
+            uid = uid,
+            msgType = 32,
+            secureInfo = secureInfo,
+            ntCoreVersion = 100,
+        )
+    }.pbEncode()
+
+    private fun AbstractClient.buildProtocol12(
+        command: String,
+        payload: ByteArray,
+        sequence: Int,
+        ssoSecureInfo: SsoSecureInfo?,
+        encryptType: EncryptType,
+    ): Buffer = Buffer().apply {
+        barrier(Prefix.UINT_32 or Prefix.INCLUDE_PREFIX) {
+            writeInt(12)
+            writeByte(encryptType.underlying)
+            writeBytes(
+                when (encryptType) {
+                    EncryptType.WithD2Key -> d2
+                    else -> ByteArray(0)
+                },
+                Prefix.UINT_32 or Prefix.INCLUDE_PREFIX
+            )
+            writeByte(0) // unknown
+            writeString(uin.toString(), Prefix.UINT_32 or Prefix.INCLUDE_PREFIX)
+            val sso = Buffer().apply {
+                barrier(Prefix.UINT_32 or Prefix.INCLUDE_PREFIX) {
+                    writeInt(sequence)
+                    writeInt(subAppId)
+                    writeInt(2052)  // locale id
+                    writeBytes(buildSsoFixedBytes)
+                    writeBytes(a2, Prefix.UINT_32 or Prefix.INCLUDE_PREFIX)
+                    writeString(command, Prefix.UINT_32 or Prefix.INCLUDE_PREFIX)
+                    writeBytes(ByteArray(0), Prefix.UINT_32 or Prefix.INCLUDE_PREFIX) // unknown
+                    writeString(guid.toHexString(), Prefix.UINT_32 or Prefix.INCLUDE_PREFIX)
+                    writeBytes(ByteArray(0), Prefix.UINT_32 or Prefix.INCLUDE_PREFIX) // unknown
+                    writeString(currentVersion, Prefix.UINT_16 or Prefix.INCLUDE_PREFIX)
+                    writeBytes(buildSsoReserved(ssoSecureInfo), Prefix.UINT_32 or Prefix.INCLUDE_PREFIX)
+                }
+                writeBytes(payload, Prefix.UINT_32 or Prefix.INCLUDE_PREFIX)
+            }
+            when (encryptType) {
+                EncryptType.None -> transferFrom(sso)
+                EncryptType.WithD2Key -> writeBytes(TEA.encrypt(sso.readByteArray(), d2Key))
+                EncryptType.WithEmptyKey -> writeBytes(TEA.encrypt(sso.readByteArray(), ByteArray(16)))
+            }
+        }
+    }
+
+    private fun AbstractClient.buildProtocol13(
+        command: String,
+        payload: ByteArray,
+        sequence: Int,
+        ssoSecureInfo: SsoSecureInfo?,
+        encryptType: EncryptType,
+    ): Buffer = Buffer().apply {
+        barrier(Prefix.UINT_32 or Prefix.INCLUDE_PREFIX) {
+            writeInt(13)
+            writeByte(encryptType.underlying)
             writeInt(sequence)
-            writeInt(client.appInfo.subAppId)
-            writeInt(2052)  // locale id
-            writeFully(buildSsoFixedBytes)
-            writeBytes(client.sessionStore.a2, Prefix.UINT_32 or Prefix.INCLUDE_PREFIX)
-            writeString(command, Prefix.UINT_32 or Prefix.INCLUDE_PREFIX)
-            writeBytes(ByteArray(0), Prefix.UINT_32 or Prefix.INCLUDE_PREFIX) // unknown
-            writeString(client.sessionStore.guid.toHexString(), Prefix.UINT_32 or Prefix.INCLUDE_PREFIX)
-            writeBytes(ByteArray(0), Prefix.UINT_32 or Prefix.INCLUDE_PREFIX) // unknown
-            writeString(client.appInfo.currentVersion, Prefix.UINT_16 or Prefix.INCLUDE_PREFIX)
-            writeBytes(ssoReserved, Prefix.UINT_32 or Prefix.INCLUDE_PREFIX)
+            writeByte(0)
+            writeString(uin.toString(), Prefix.UINT_32 or Prefix.INCLUDE_PREFIX)
+            val sso = Buffer().apply {
+                barrier(Prefix.UINT_32 or Prefix.INCLUDE_PREFIX) {
+                    writeString(command, Prefix.UINT_32 or Prefix.INCLUDE_PREFIX)
+                    writeInt(4) // uint 32 with prefix, ByteArray(0)
+                    writeBytes(buildSsoReserved(ssoSecureInfo), Prefix.UINT_32 or Prefix.INCLUDE_PREFIX)
+                }
+                writeBytes(payload, Prefix.UINT_32 or Prefix.INCLUDE_PREFIX)
+            }
+            when (encryptType) {
+                EncryptType.None -> transferFrom(sso)
+                EncryptType.WithD2Key -> writeBytes(TEA.encrypt(sso.readByteArray(), d2Key))
+                EncryptType.WithEmptyKey -> writeBytes(TEA.encrypt(sso.readByteArray(), ByteArray(16)))
+            }
+        }
+    }
+
+    internal fun AbstractClient.parseSsoFrame(packet: ByteArray): SsoResponse {
+        val rawReader = packet.reader()
+        val protocol = rawReader.readUInt()
+        val authFlag = rawReader.readByte()
+        rawReader.readByte() // dummy
+        rawReader.readPrefixedString(Prefix.UINT_32 or Prefix.INCLUDE_PREFIX) // uin
+        if (protocol != 12u && protocol != 13u) throw Exception("Unrecognized protocol: $protocol")
+        val encrypted = rawReader.readByteArray()
+        val decrypted = when (authFlag) {
+            EncryptType.None.underlying -> encrypted
+            EncryptType.WithD2Key.underlying -> TEA.decrypt(encrypted, d2Key)
+            EncryptType.WithEmptyKey.underlying -> TEA.decrypt(encrypted, ByteArray(16))
+            else -> throw Exception("Unrecognized auth flag: $authFlag")
         }
 
-        packet.writeBytes(payload, Prefix.UINT_32 or Prefix.INCLUDE_PREFIX)
-
-        return packet.readByteArray()
-    }
-
-    private suspend fun buildSsoReserved(command: String, payload: ByteArray, sequence: Int): ByteArray {
-        val result: SignResult? = if (signRequiredCommand.contains(command)) {
-            client.signProvider.sign(command, sequence, payload)
-        } else null
-
-        return SsoReservedFields(
-            trace = generateTrace(),
-            uid = client.sessionStore.uid,
-            secureInfo = result?.toSsoSecureInfo(),
-        ).pbEncode()
-    }
-
-    private fun parseSso(packet: ByteArray): SsoResponse {
-        val reader = packet.reader()
+        val reader = decrypted.reader()
         reader.readUInt() // headLen
         val sequence = reader.readUInt()
         val retCode = reader.readInt()
@@ -233,42 +323,6 @@ internal class PacketContext(client: LagrangeClient) : AbstractContext(client) {
             SsoResponse(retCode, command, payload, sequence.toInt())
         } else {
             SsoResponse(retCode, command, payload, sequence.toInt(), extra)
-        }
-    }
-
-    private fun parseService(raw: ByteArray): ByteArray {
-        val reader = raw.reader()
-
-        val protocol = reader.readUInt()
-        val authFlag = reader.readByte()
-        /* val flag = */ reader.readByte()
-        /* val uin = */ reader.readPrefixedString(Prefix.UINT_32 or Prefix.INCLUDE_PREFIX)
-
-        if (protocol != 12u && protocol != 13u) throw Exception("Unrecognized protocol: $protocol")
-
-        val encrypted = reader.readByteArray()
-        return when (authFlag) {
-            0.toByte() -> encrypted
-            1.toByte() -> TeaProvider.decrypt(encrypted, client.sessionStore.d2Key)
-            2.toByte() -> TeaProvider.decrypt(encrypted, ByteArray(16))
-            else -> throw Exception("Unrecognized auth flag: $authFlag")
-        }
-    }
-
-    private fun SignResult.toSsoSecureInfo(): SsoSecureInfo = SsoSecureInfo(sign, token, extra)
-
-    private suspend fun cleanupPendingRequests(error: Throwable) {
-        val pendingCount = mapQueryMutex.withLock { pending.size }
-        if (pendingCount > 0) {
-            logger.w { "清理 $pendingCount 个待处理的请求" }
-            mapQueryMutex.withLock {
-                pending.forEach { (_, deferred) ->
-                    deferred.completeExceptionally(
-                        IOException("连接已断开: ${error.message}", error)
-                    )
-                }
-                pending.clear()
-            }
         }
     }
 }

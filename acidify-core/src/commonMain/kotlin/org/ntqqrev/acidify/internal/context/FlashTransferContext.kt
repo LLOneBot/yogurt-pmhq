@@ -5,7 +5,7 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.async
-import org.ntqqrev.acidify.internal.LagrangeClient
+import org.ntqqrev.acidify.internal.AbstractClient
 import org.ntqqrev.acidify.internal.crypto.hash.SHA1Stream
 import org.ntqqrev.acidify.internal.proto.message.media.FlashTransferSha1StateV
 import org.ntqqrev.acidify.internal.proto.message.media.FlashTransferUploadBody
@@ -15,8 +15,7 @@ import org.ntqqrev.acidify.internal.util.pbDecode
 import org.ntqqrev.acidify.internal.util.pbEncode
 import org.ntqqrev.acidify.internal.util.sha1
 
-internal class FlashTransferContext(client: LagrangeClient) : AbstractContext(client) {
-    private val logger = client.createLogger(this)
+internal class FlashTransferContext(client: AbstractClient) : AbstractContext(client) {
     private val httpClient = HttpClient()
     private val url = "https://multimedia.qfile.qq.com/sliceupload"
 
