@@ -16,16 +16,19 @@ import org.ntqqrev.yogurt.sessionStorePath
 fun Application.configureSessionStoreAutoSave() = launch {
     val bot = dependencies.resolve<AbstractBot>()
     val logger = bot.createLogger("SessionStoreUtils")
-    bot.eventFlow.filterIsInstance<SessionStoreUpdatedEvent>().collect {
-        logger.i { "SessionStore 已更新，正在保存至文件..." }
-        SystemFileSystem.sink(sessionStorePath).buffered().use { source ->
-            source.writeString(it.sessionStore.toJson())
+    if (isPC) {
+        bot.eventFlow.filterIsInstance<SessionStoreUpdatedEvent>().collect {
+            logger.i { "SessionStore 已更新，正在保存至文件..." }
+            SystemFileSystem.sink(sessionStorePath).buffered().use { source ->
+                source.writeString(it.sessionStore.toJson())
+            }
         }
-    }
-    bot.eventFlow.filterIsInstance<AndroidSessionStoreUpdatedEvent>().collect {
-        logger.i { "Android SessionStore 已更新，正在保存至文件..." }
-        SystemFileSystem.sink(androidSessionStorePath).buffered().use { source ->
-            source.writeString(it.sessionStore.toJson())
+    } else if (isAndroid) {
+        bot.eventFlow.filterIsInstance<AndroidSessionStoreUpdatedEvent>().collect {
+            logger.i { "Android SessionStore 已更新，正在保存至文件..." }
+            SystemFileSystem.sink(androidSessionStorePath).buffered().use { source ->
+                source.writeString(it.sessionStore.toJson())
+            }
         }
     }
 }
