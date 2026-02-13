@@ -31,11 +31,13 @@ kotlin {
             implementation(libs.kotlinx.serialization.protobuf)
             implementation(libs.kotlinx.coroutines)
             implementation(libs.kotlinx.io)
-            implementation(libs.bundles.ktor.client)
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.network)
             implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.kompress)
-            implementation(libs.bundles.xmlutil)
+            implementation(libs.xmlutil.core)
+            implementation(libs.xmlutil.serialization)
         }
         commonTest.dependencies {
             implementation(libs.ktor.client.cio)
