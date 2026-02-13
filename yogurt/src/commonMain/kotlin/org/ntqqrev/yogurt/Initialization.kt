@@ -7,17 +7,20 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.io.buffered
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.readString
+import kotlinx.io.writeString
 import org.ntqqrev.acidify.*
 import org.ntqqrev.acidify.common.AppInfo
 import org.ntqqrev.acidify.common.SessionStore
 import org.ntqqrev.acidify.common.UrlSignProvider
 import org.ntqqrev.acidify.common.android.AndroidAppInfo
 import org.ntqqrev.acidify.common.android.AndroidSessionStore
+import org.ntqqrev.acidify.common.android.AndroidSignProvider
 import org.ntqqrev.acidify.common.android.AndroidUrlSignProvider
 import org.ntqqrev.milky.Event
 import org.ntqqrev.yogurt.YogurtApp.config
 import org.ntqqrev.yogurt.YogurtApp.t
 import org.ntqqrev.yogurt.transform.transformAcidifyEvent
+import org.ntqqrev.yogurt.util.AndroidLegacyUrlSignProvider
 import org.ntqqrev.yogurt.util.logHandler
 
 suspend fun Application.initializePC(): Bot {
@@ -70,7 +73,11 @@ suspend fun Application.initializeAndroid(): AndroidBot {
     require(config.androidCredentials.uin != 0L && config.androidCredentials.password.isNotEmpty()) {
         "请在配置文件中填写 androidCredentials 的 uin 和 password 字段"
     }
-    val signProvider = AndroidUrlSignProvider(config.signApiUrl)
+    val signProvider: AndroidSignProvider = if (!config.androidUseLegacySign) {
+        AndroidUrlSignProvider(config.signApiUrl)
+    } else {
+        AndroidLegacyUrlSignProvider(config.signApiUrl)
+    }
     val sessionStore: AndroidSessionStore = if (SystemFileSystem.exists(androidSessionStorePath)) {
         SystemFileSystem.source(androidSessionStorePath).buffered().use {
             AndroidSessionStore.fromJson(it.readString())
@@ -86,7 +93,12 @@ suspend fun Application.initializeAndroid(): AndroidBot {
     } else AndroidSessionStore.empty(
         uin = config.androidCredentials.uin,
         password = config.androidCredentials.password
-    )
+    ).also {
+        t.println("未找到 Android SessionStore，正在创建新的 SessionStore 并保存到文件...")
+        SystemFileSystem.sink(androidSessionStorePath).buffered().use { sink ->
+            sink.writeString(it.toJson())
+        }
+    }
     val appInfo: AndroidAppInfo = when (config.protocol.version) {
         "fetched" -> throw IllegalStateException("Android 协议不支持通过 Sign API 获取 AppInfo，请使用内置版本或自定义版本")
 
@@ -100,6 +112,15 @@ suspend fun Application.initializeAndroid(): AndroidBot {
 
         else -> bundledAndroidAppInfo["${config.protocol.os}/${config.protocol.version}"]
             ?: throw IllegalStateException("未找到匹配的内置 AppInfo，请检查配置的 OS 和 Version 是否正确")
+    }
+    if (signProvider is AndroidLegacyUrlSignProvider) {
+        t.println("正在注册设备信息到 Sign API...")
+        signProvider.registerDevice(
+            qua = appInfo.qua,
+            uin = sessionStore.uin,
+            qimei = sessionStore.qimei,
+            guid = sessionStore.guid.toHexString(),
+        )
     }
     t.println("使用协议 ${appInfo.os} ${appInfo.currentVersion} (AppId: ${appInfo.subAppId})")
     val androidBot = AndroidBot.create(

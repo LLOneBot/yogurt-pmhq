@@ -17,6 +17,7 @@ class YogurtConfig(
     val signApiUrl: String = "",
     val protocol: Protocol = Protocol(),
     val androidCredentials: AndroidCredentials = AndroidCredentials(),
+    val androidUseLegacySign: Boolean = false,
     val reportSelfMessage: Boolean = true,
     val preloadContacts: Boolean = false,
     val transformIncomingMFaceToImage: Boolean = false,

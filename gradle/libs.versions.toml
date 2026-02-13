@@ -35,6 +35,8 @@ kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.
 
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-client-auth = { module = "io.ktor:ktor-client-auth", version.ref = "ktor" }
+
 ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 ktor-client-winhttp = { module = "io.ktor:ktor-client-winhttp", version.ref = "ktor" }
 ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
@@ -67,6 +69,7 @@ logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "lo
 ktor-client = [
     "ktor-client-core",
     "ktor-client-content-negotiation",
+    "ktor-client-auth",
 ]
 ktor-server = [
     "ktor-server-core",
@@ -76,10 +79,6 @@ ktor-server = [
     "ktor-server-cors",
     "ktor-server-sse",
     "ktor-server-websockets"
-]
-xmlutil = [
-    "xmlutil-core",
-    "xmlutil-serialization"
 ]
 
 [plugins]
