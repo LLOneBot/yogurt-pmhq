@@ -14,17 +14,11 @@
 
 ## 模块一览
 
-### Kotlin
-
 - `acidify-core` - PC & Android NTQQ 协议的核心实现 [![Maven Central](https://img.shields.io/maven-central/v/org.ntqqrev/acidify-core?label=Maven%20Central&logo=maven&color=blue)](https://central.sonatype.com/artifact/org.ntqqrev/acidify-core)
-- `yogurt` - 基于 Acidify 的 Milky 实现
-- `yogurt-jvm` - Yogurt 的 JVM 平台适配 (Workaround for Ktor plugin's incompatibility issue)
-
-### TypeScript
-
-- `@acidify/core` - `acidify-core` 的 Kotlin/JS 导出版本 [![npm](https://img.shields.io/npm/v/%40acidify%2Fcore)](https://www.npmjs.com/package/@acidify/core)
-- `@acidify/yogurt` - Yogurt 的预编译二进制包 [![npm](https://img.shields.io/npm/v/%40acidify%2Fyogurt)](https://www.npmjs.com/package/@acidify/yogurt)
-- `@acidify/docs` - Acidify 文档
+  - `@acidify/core` - `acidify-core` 的 Kotlin/JS 导出版本 [![npm](https://img.shields.io/npm/v/%40acidify%2Fcore)](https://www.npmjs.com/package/@acidify/core)
+- `yogurt` - 基于 `acidify-core` 的 QQ 协议端
+  - `@acidify/yogurt` - Yogurt 的预编译二进制包 [![npm](https://img.shields.io/npm/v/%40acidify%2Fyogurt)](https://www.npmjs.com/package/@acidify/yogurt)
+  - `yogurt-jvm` - Yogurt 的 JVM 平台适配 (Workaround for Ktor plugin's incompatibility issue)
 
 ## 支持平台
 
@@ -40,6 +34,7 @@
 - [Milky](https://milky.ntqqrev.org/) - 基于 HTTP / WebSocket 通信的新时代 QQ 机器人应用接口标准
 - [acidify-codec](https://github.com/SaltifyDev/acidify-codec) - LagrangeCodec 的 Kotlin 绑定
 - [Cecilia](https://github.com/Wesley-Young/Cecilia) - 实验性的基于 Compose 的即时聊天软件
+- [yogurt-captcha-solver](https://github.com/SaltifyDev/yogurt-captcha-solver) - QQ 图形验证码 Ticket 抓取辅助工具
 
 ## Special Thanks
 
