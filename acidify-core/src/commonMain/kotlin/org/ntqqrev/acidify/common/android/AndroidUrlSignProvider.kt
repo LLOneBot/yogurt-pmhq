@@ -1,3 +1,5 @@
+@file:Suppress("duplicatedCode")
+
 package org.ntqqrev.acidify.common.android
 
 import io.ktor.client.*
@@ -17,6 +19,8 @@ import org.ntqqrev.acidify.common.SignResult
  * @param httpProxy 可选的 HTTP 代理地址，例如 `http://127.0.0.1:7890`
  */
 class AndroidUrlSignProvider(val url: String, val httpProxy: String? = null) : AndroidSignProvider {
+    val base = Url(url)
+
     private val client = HttpClient {
         install(ContentNegotiation) {
             json(Json { ignoreUnknownKeys = true })
@@ -37,7 +41,11 @@ class AndroidUrlSignProvider(val url: String, val httpProxy: String? = null) : A
         version: String,
         qua: String
     ): SignResult {
-        val data = client.post("$url/sign") {
+        val data = client.post {
+            url {
+                takeFrom(base)
+                appendPathSegments("sign")
+            }
             contentType(ContentType.Application.Json)
             setBody(
                 AndroidUrlSignRequest(
@@ -66,7 +74,11 @@ class AndroidUrlSignProvider(val url: String, val httpProxy: String? = null) : A
         version: String,
         qua: String
     ): ByteArray {
-        val data = client.post("$url/energy") {
+        val data = client.post {
+            url {
+                takeFrom(base)
+                appendPathSegments("energy")
+            }
             contentType(ContentType.Application.Json)
             setBody(
                 AndroidUrlEnergyRequest(
@@ -89,7 +101,11 @@ class AndroidUrlSignProvider(val url: String, val httpProxy: String? = null) : A
         version: String,
         qua: String
     ): ByteArray {
-        val data = client.post("$url/get_tlv553") {
+        val data = client.post {
+            url {
+                takeFrom(base)
+                appendPathSegments("get_tlv553")
+            }
             contentType(ContentType.Application.Json)
             setBody(
                 AndroidUrlDebugXwidRequest(

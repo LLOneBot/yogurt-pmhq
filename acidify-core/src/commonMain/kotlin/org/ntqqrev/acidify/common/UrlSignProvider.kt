@@ -16,6 +16,8 @@ import kotlinx.serialization.Serializable
  * @param httpProxy 可选的 HTTP 代理地址，例如 `http://127.0.0.1:7890`
  */
 class UrlSignProvider(val url: String, val httpProxy: String? = null) : SignProvider {
+    private val signUrl = Url(url)
+
     private val client = HttpClient {
         install(ContentNegotiation) {
             json()
@@ -28,7 +30,8 @@ class UrlSignProvider(val url: String, val httpProxy: String? = null) : SignProv
     }
 
     override suspend fun sign(cmd: String, seq: Int, src: ByteArray): SignResult {
-        val value = client.post(url) {
+        val value = client.post {
+            url(signUrl)
             contentType(ContentType.Application.Json)
             setBody(UrlSignRequest(cmd, seq, src.toHexString()))
         }.body<UrlSignResponse>().value
@@ -43,7 +46,12 @@ class UrlSignProvider(val url: String, val httpProxy: String? = null) : SignProv
      * 通过 Lagrange 的签名服务提供的额外的 `/appinfo` 接口获取 [AppInfo]，若未提供则返回 `null`
      */
     suspend fun getAppInfo(): AppInfo? {
-        val response = client.get("$url/appinfo")
+        val response = client.get {
+            url {
+                takeFrom(signUrl)
+                appendPathSegments("appinfo")
+            }
+        }
         return if (response.status == HttpStatusCode.OK) {
             AppInfo.fromJson(response.bodyAsText())
         } else {
