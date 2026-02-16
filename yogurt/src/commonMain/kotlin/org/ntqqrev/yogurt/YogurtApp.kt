@@ -56,7 +56,6 @@ object YogurtApp {
 
         t.println(
             """
-                Starting ${BuildKonfig.name} v${BuildKonfig.version}
                 .--------------------------------------.
                 |   __  __                       __    |
                 |   \ \/ /___  ____ ___  _______/ /_   |
@@ -65,6 +64,8 @@ object YogurtApp {
                 |   /_/\____/\__, /\__,_/_/   \__/     |
                 |           /____/   Acidify + Milky   |
                 '--------------------------------------'
+                ${BuildKonfig.name} v${BuildKonfig.version}
+                
                 Commit Hash:    ${BuildKonfig.commitHash}
                 Core Version:   ${BuildKonfig.coreVersion}
                 Milky Version:  ${BuildKonfig.milkyVersion} ($milkyVersion)

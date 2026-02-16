@@ -62,16 +62,20 @@ kotlin {
     }
 }
 
-val gitHashProvider = providers.exec {
+val gitHashProvider: Provider<String> = providers.exec {
     commandLine("git", "rev-parse", "HEAD")
 }.standardOutput.asText.map { it.trim() }
 
-val buildTimeProvider = providers.provider {
+val coreLibGitHashProvider: Provider<String> = providers.exec {
+    commandLine("git", "-C", project(":acidify-core").projectDir.absolutePath, "rev-parse", "HEAD")
+}.standardOutput.asText.map { it.trim() }
+
+val buildTimeProvider: Provider<String> = providers.provider {
     ZonedDateTime.now(ZoneId.of("Asia/Shanghai"))
         .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z"))
 }
 
-val runNumberProvider = providers.provider {
+val runNumberProvider: Provider<String> = providers.provider {
     System.getenv("GITHUB_RUN_NUMBER") ?: "local"
 }
 
@@ -85,7 +89,7 @@ buildkonfig {
             FieldSpec.Type.STRING,
             "coreVersion",
             project(":acidify-core").let {
-                "${it.name} ${it.version}"
+                "${it.name} ${it.version}+${coreLibGitHashProvider.get().substring(0, 7)}"
             }
         )
         buildConfigField(
