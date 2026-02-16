@@ -16,6 +16,7 @@ import org.ntqqrev.acidify.common.android.AndroidAppInfo
 import org.ntqqrev.acidify.common.android.AndroidSessionStore
 import org.ntqqrev.acidify.common.android.AndroidSignProvider
 import org.ntqqrev.acidify.common.android.AndroidUrlSignProvider
+import org.ntqqrev.acidify.exception.UnstableNetworkException
 import org.ntqqrev.milky.Event
 import org.ntqqrev.yogurt.YogurtApp.config
 import org.ntqqrev.yogurt.YogurtApp.t
@@ -149,20 +150,34 @@ suspend fun Application.initializeAndroid(): AndroidBot {
 suspend fun Application.botLogin() {
     when (val bot = dependencies.resolve<AbstractBot>()) {
         is Bot -> bot.login(preloadContacts = config.preloadContacts)
-        is AndroidBot -> bot.login(
-            onRequireCaptchaTicket = { captchaUrl ->
+        is AndroidBot -> {
+            fun onRequireCaptchaTicket(captchaUrl: String): String {
                 val queryParams = captchaUrl.split("?")[1].replace("uin=0", "uin=${bot.uin}")
                 t.println("https://yogurt-captcha.ntqqrev.org/?$queryParams")
                 t.println("请打开网页完成验证码后输入 Ticket，并按 Enter 提交：")
-                readln().trim()
-            },
-            onRequireSmsCode = { countryCode, phone, url ->
+                return readln().trim()
+            }
+
+            fun onRequireSmsCode(countryCode: String, phone: String, url: String): String {
                 t.println("短信已发送到 $countryCode-$phone，请输入收到的验证码，并按 Enter 提交。")
                 t.println("如果未收到验证码，也可以进行通过下面的 URL 进行手动验证，然后直接按 Enter 以继续登录。")
                 t.println(url)
-                readln().trim()
-            },
-            preloadContacts = config.preloadContacts,
-        )
+                return readln().trim()
+            }
+
+            try {
+                bot.login(
+                    ::onRequireCaptchaTicket,
+                    ::onRequireSmsCode,
+                    preloadContacts = config.preloadContacts,
+                )
+            } catch (e: UnstableNetworkException) {
+                t.println("发生 code=237 错误，可能是 Ticket 验证失败或网络环境不稳定，请更换网络环境后重试登录；")
+                t.println("或通过下面的 URL 进行手动验证，验证完毕后按 Enter 重新登录。")
+                t.println(e.manualVerifyUrl)
+                readln()
+                botLogin()
+            }
+        }
     }
 }

@@ -9,7 +9,7 @@ import kotlin.js.JsExport
  * @property msg 错误信息
  */
 @JsExport
-class WtLoginException internal constructor(
+open class WtLoginException internal constructor(
     val code: Int,
     val tag: String,
     val msg: String

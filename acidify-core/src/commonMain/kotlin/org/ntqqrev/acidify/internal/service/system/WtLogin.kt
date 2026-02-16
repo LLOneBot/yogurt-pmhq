@@ -1,11 +1,13 @@
 package org.ntqqrev.acidify.internal.service.system
 
 import kotlinx.io.*
+import org.ntqqrev.acidify.exception.UnstableNetworkException
 import org.ntqqrev.acidify.exception.WtLoginException
 import org.ntqqrev.acidify.internal.AbstractClient
 import org.ntqqrev.acidify.internal.crypto.ecdh.Ecdh
 import org.ntqqrev.acidify.internal.crypto.pow.POW
 import org.ntqqrev.acidify.internal.crypto.tea.TEA
+import org.ntqqrev.acidify.internal.proto.login.AndroidTlvBody543
 import org.ntqqrev.acidify.internal.proto.login.TlvBody543
 import org.ntqqrev.acidify.internal.proto.login.TlvQRCodeBodyD1Resp
 import org.ntqqrev.acidify.internal.service.EncryptType
@@ -303,6 +305,14 @@ internal abstract class WtLogin<T, R>(
                 val code = tlv146.readInt()
                 val tag = tlv146.readPrefixedString(Prefix.UINT_16 or Prefix.LENGTH_ONLY)
                 val message = tlv146.readPrefixedString(Prefix.UINT_16 or Prefix.LENGTH_ONLY)
+                if (code == 237 && 0x543u in tlvPack) {
+                    val tlv543 = tlvPack[0x543u]!!.pbDecode<AndroidTlvBody543>()
+                    throw UnstableNetworkException(
+                        tag = tag,
+                        msg = message,
+                        manualVerifyUrl = tlv543.buttonInfo.actions.firstNotNullOf { it.url }
+                    )
+                }
                 throw WtLoginException(code, tag, message)
             }
             return Resp(state, tlvPack)
@@ -368,6 +378,7 @@ internal abstract class WtLogin<T, R>(
                 }
                 tlv544(payload.energy)
                 tlv553(payload.debugXwid)
+                tlv542()
             }
         }
 

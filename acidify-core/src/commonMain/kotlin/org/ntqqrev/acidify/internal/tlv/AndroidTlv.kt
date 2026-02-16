@@ -3,6 +3,7 @@ package org.ntqqrev.acidify.internal.tlv
 import kotlinx.io.*
 import org.ntqqrev.acidify.internal.KuromeClient
 import org.ntqqrev.acidify.internal.crypto.tea.TEA
+import org.ntqqrev.acidify.internal.proto.login.AndroidTlvBody542
 import org.ntqqrev.acidify.internal.proto.system.AndroidDeviceReport
 import org.ntqqrev.acidify.internal.util.*
 import kotlin.random.Random
@@ -302,6 +303,18 @@ internal class AndroidTlv(val client: KuromeClient) : TlvBuilder() {
                 androidId = client.sessionStore.androidId,
                 baseBand = "",
                 innerVersion = "V816.0.6.0.TKHCNXM"
+            ).pbEncode()
+        )
+    }
+
+    fun tlv542() = writeTlv(0x542u) {
+        writeBytes(
+            AndroidTlvBody542(
+                field9 = AndroidTlvBody542.Field9(
+                    field12 = 1,
+                    field15 = 1,
+                ),
+                field17 = 1,
             ).pbEncode()
         )
     }
