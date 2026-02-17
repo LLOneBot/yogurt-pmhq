@@ -253,3 +253,66 @@ jobs:
             npm publish --tag latest --access public
             cd -
           done
+
+  release-yogurt:
+    if: contains(github.event.head_commit.message, '[skip build]') == false
+    needs:
+      - build-native
+      - build-jvm
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-input
+
+      - name: Prepare release assets
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets
+
+          for dir in release-input/yogurt-*; do
+            if [ -d "$dir" ]; then
+              base="$(basename "$dir")"
+              tar -czf "release-assets/${base}.tar.gz" -C "$dir" .
+            fi
+          done
+
+          if [ -f release-input/yogurt-jvm/yogurt-jvm-all.jar ]; then
+            cp release-input/yogurt-jvm/yogurt-jvm-all.jar release-assets/yogurt-jvm-all.jar
+          fi
+
+      - name: Resolve release version
+        id: release_version
+        run: |
+          set -euo pipefail
+          version="$(python3 <<'PY'
+          import re
+          from pathlib import Path
+
+          gradle_file = Path("yogurt") / "build.gradle.kts"
+          content = gradle_file.read_text(encoding="utf-8")
+          match = re.search(r'version\s*=\s*"([^"]+)"', content)
+          if not match:
+              raise SystemExit("Cannot find version in yogurt/build.gradle.kts")
+          print(match.group(1))
+          PY
+          )"
+          echo "release_version=${version}" >> "$GITHUB_OUTPUT"
+          echo "release_tag=v${{ steps.release_version.outputs.release_version }}-dev.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+          echo "release_name=Yogurt v${{ steps.release_version.outputs.release_version }} (build ${{ github.run_number }})" >> "$GITHUB_OUTPUT"
+
+      - name: Create release in SaltifyDev/yogurt-releases
+        uses: softprops/action-gh-release@v2
+        with:
+          repository: SaltifyDev/yogurt-releases
+          tag_name: ${{ steps.release_version.outputs.release_tag }}
+          name: ${{ steps.release_version.outputs.release_name }}
+          generate_release_notes: false
+          files: release-assets/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.YOGURT_RELEASE_TOKEN }}
