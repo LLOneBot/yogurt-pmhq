@@ -278,7 +278,10 @@ jobs:
           for dir in release-input/yogurt-*; do
             if [ -d "$dir" ]; then
               base="$(basename "$dir")"
-              tar -czf "release-assets/${base}.tar.gz" -C "$dir" .
+              if [ "$base" = "yogurt-jvm" ]; then
+                continue
+              fi
+              (cd "$dir" && zip -r "../../release-assets/${base}.zip" .)
             fi
           done
 
@@ -303,16 +306,19 @@ jobs:
           PY
           )"
           echo "release_version=${version}" >> "$GITHUB_OUTPUT"
-          echo "release_tag=v${{ steps.release_version.outputs.release_version }}-dev.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
-          echo "release_name=Yogurt v${{ steps.release_version.outputs.release_version }} (build ${{ github.run_number }})" >> "$GITHUB_OUTPUT"
+          echo "release_tag=v${version}-build.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+          echo "release_name=Yogurt v${version} (build ${{ github.run_number }})" >> "$GITHUB_OUTPUT"
 
-      - name: Create release in SaltifyDev/yogurt-releases
+      - name: Create release in SaltifyDev/yogurt-release
         uses: softprops/action-gh-release@v2
         with:
-          repository: SaltifyDev/yogurt-releases
+          repository: SaltifyDev/yogurt-release
           tag_name: ${{ steps.release_version.outputs.release_tag }}
           name: ${{ steps.release_version.outputs.release_name }}
           generate_release_notes: false
           files: release-assets/*
+          body: |
+            Yogurt build #${{ github.run_number }}
+            *由 CI 自动构建并发布*
         env:
           GITHUB_TOKEN: ${{ secrets.YOGURT_RELEASE_TOKEN }}
