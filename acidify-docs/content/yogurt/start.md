@@ -28,9 +28,17 @@ npm install -g @acidify/yogurt
 | Linux   | x64, arm64 |
 | macOS   | x64, arm64 |
 
-### 在 JVM 上运行
+### 从 Releases 下载和运行
 
-配置 Java 25+ 运行时，然后在 [Actions](https://github.com/LagrangeDev/acidify/actions/workflows/build-yogurt.yml) 中下载 JAR 文件，运行：
+Yogurt 的构建产物发布在 [SaltifyDev/yogurt-releases](https://github.com/SaltifyDev/yogurt-releases/releases) 仓库的 Releases 下。下载对应平台的压缩包，解压后运行 `yogurt.(k)exe` 即可。支持的平台如下：
+
+| OS      | Arch       |
+|---------|------------|
+| Windows | x64        |
+| Linux   | x64, arm64 |
+| macOS   | x64, arm64 |
+
+Yogurt 的构建产物中还包含可在 JVM 上运行的 fat-jar。配置 Java 25+ 运行时，然后在 Releases 中下载 `yogurt-jvm-all.jar`，运行：
 
 ```
 java -jar yogurt-jvm-all.jar
@@ -44,6 +52,6 @@ java -jar yogurt-jvm-all.jar
 | Linux   | x64, arm64 |
 | macOS   | x64, arm64 |
 
-> [!note]
-> 
-> 下载 Actions 的构建产物必须登录 GitHub，并且构建产物有保存期限，请及时下载。对于一般的使用需求，推荐使用 npm 包的方式安装和运行 Yogurt。
+> [!important]
+>
+> 构建产物发布在 SaltifyDev/yogurt-releases，并非原仓库 LagrangeDev/acidify；后者用于记录 `acidify-core` 的版本迭代，并不包含 Yogurt 的构建产物。
