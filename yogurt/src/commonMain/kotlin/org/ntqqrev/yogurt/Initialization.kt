@@ -1,5 +1,7 @@
 package org.ntqqrev.yogurt
 
+import com.github.ajalt.mordant.platform.MultiplatformSystem.exitProcess
+import com.github.ajalt.mordant.rendering.TextColors
 import io.ktor.server.application.*
 import io.ktor.server.plugins.di.*
 import kotlinx.coroutines.flow.*
@@ -17,6 +19,7 @@ import org.ntqqrev.acidify.common.android.AndroidSessionStore
 import org.ntqqrev.acidify.common.android.AndroidSignProvider
 import org.ntqqrev.acidify.common.android.AndroidUrlSignProvider
 import org.ntqqrev.acidify.exception.UnstableNetworkException
+import org.ntqqrev.acidify.exception.WtLoginException
 import org.ntqqrev.milky.Event
 import org.ntqqrev.yogurt.YogurtApp.config
 import org.ntqqrev.yogurt.YogurtApp.t
@@ -177,6 +180,8 @@ suspend fun Application.botLogin() {
                 t.println(e.manualVerifyUrl)
                 readln()
                 botLogin()
+            } catch (e: WtLoginException) {
+                t.println(TextColors.red("${e.tag} (code=${e.code})：${e.msg}"))
             }
         }
     }
