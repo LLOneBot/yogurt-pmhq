@@ -6,8 +6,8 @@
   ],
   "pages": [
     {
-      "title": "概览",
-      "purpose": "介绍 acidify-core 作为 PC NTQQ 协议实现以及基于其上的 yogurt Milky 应用，说明两者关系、生态定位与受支持的平台。",
+      "title": "文档阅读导航",
+      "purpose": "为首次进入仓库的读者提供阅读顺序：先理解项目定位与模块边界，再按 acidify-core、yogurt、工程化链路逐层深入。",
       "page_notes": [
         {
           "content": "使用简体中文生成文档。对于本页面的每个小标题，在其前面生成一个简单的数字序号，如 `1.`, `1.1`, `1.2` 等，方便 DeepWiki 生成页面锚点"
@@ -15,8 +15,8 @@
       ]
     },
     {
-      "title": "Acidify Core",
-      "purpose": "总体说明 acidify-core 模块的角色、暴露接口以及对上层模块和外部生态的支撑方式。",
+      "title": "系统架构与模块边界",
+      "purpose": "解释仓库中 acidify-core、yogurt、acidify-core-runner、yogurt-jvm、acidify-core-js、acidify-docs、yogurt-scripting 与 npm 分发包各自职责。",
       "page_notes": [
         {
           "content": "使用简体中文生成文档。对于本页面的每个小标题，在其前面生成一个简单的数字序号，如 `1.`, `1.1`, `1.2` 等，方便 DeepWiki 生成页面锚点"
@@ -24,68 +24,8 @@
       ]
     },
     {
-      "title": "多平台与发布流水线",
-      "purpose": "解释 acidify-core 的 Kotlin Multiplatform、JS IR/Node、TypeScript 定义、Maven Central 发布与 Dokka 文档配置。",
-      "page_notes": [
-        {
-          "content": "使用简体中文生成文档。对于本页面的每个小标题，在其前面生成一个简单的数字序号，如 `1.`, `1.1`, `1.2` 等，方便 DeepWiki 生成页面锚点"
-        }
-      ],
-      "parent": "Acidify Core"
-    },
-    {
-      "title": "Bot 生命周期与会话管理",
-      "purpose": "描述 Bot 如何封装 AppInfo/SessionStore/SignProvider，处理二维码登录、在线离线控制及好友/群缓存。",
-      "page_notes": [
-        {
-          "content": "使用简体中文生成文档。对于本页面的每个小标题，在其前面生成一个简单的数字序号，如 `1.`, `1.1`, `1.2` 等，方便 DeepWiki 生成页面锚点"
-        }
-      ],
-      "parent": "Acidify Core"
-    },
-    {
-      "title": "LagrangeClient 与协议上下文",
-      "purpose": "梳理 LagrangeClient 及 Packet/Login/Ticket/Highway 等上下文如何维护长连接、心跳与 Highway 上传。",
-      "page_notes": [
-        {
-          "content": "使用简体中文生成文档。对于本页面的每个小标题，在其前面生成一个简单的数字序号，如 `1.`, `1.1`, `1.2` 等，方便 DeepWiki 生成页面锚点"
-        }
-      ],
-      "parent": "Acidify Core"
-    },
-    {
-      "title": "服务层与业务指令",
-      "purpose": "记录 internal.service 中系统、消息、群组、文件等指令如何通过统一 callService 流程组包、调用并解析响应。",
-      "page_notes": [
-        {
-          "content": "使用简体中文生成文档。对于本页面的每个小标题，在其前面生成一个简单的数字序号，如 `1.`, `1.1`, `1.2` 等，方便 DeepWiki 生成页面锚点"
-        }
-      ],
-      "parent": "Acidify Core"
-    },
-    {
-      "title": "消息模型与构建工具",
-      "purpose": "介绍 BotIncomingMessage、IncomingSegmentFactory、MessageBuildingContext 等对多段消息解析与构建的支持。",
-      "page_notes": [
-        {
-          "content": "使用简体中文生成文档。对于本页面的每个小标题，在其前面生成一个简单的数字序号，如 `1.`, `1.1`, `1.2` 等，方便 DeepWiki 生成页面锚点"
-        }
-      ],
-      "parent": "Acidify Core"
-    },
-    {
-      "title": "事件、日志与缓存",
-      "purpose": "总结 sharedEventFlow/sharedLogFlow、CacheUtility 预热、faceDetailMap 与 UID 映射等运行时状态与调试手段。",
-      "page_notes": [
-        {
-          "content": "使用简体中文生成文档。对于本页面的每个小标题，在其前面生成一个简单的数字序号，如 `1.`, `1.1`, `1.2` 等，方便 DeepWiki 生成页面锚点"
-        }
-      ],
-      "parent": "Acidify Core"
-    },
-    {
-      "title": "Yogurt 模块",
-      "purpose": "概述 yogurt 作为基于 acidify-core 的 Milky 实现，包含其 KMP 目标、依赖与整体运行方式。",
+      "title": "Acidify Core 设计",
+      "purpose": "从能力边界和对外接口切入，说明 acidify-core 作为 NTQQ 协议底座对上层应用提供了哪些稳定抽象。",
       "page_notes": [
         {
           "content": "使用简体中文生成文档。对于本页面的每个小标题，在其前面生成一个简单的数字序号，如 `1.`, `1.1`, `1.2` 等，方便 DeepWiki 生成页面锚点"
@@ -93,74 +33,202 @@
       ]
     },
     {
-      "title": "配置系统与安全开关",
-      "purpose": "说明 YogurtConfig 结构、默认值、配置文件生成/重写流程以及签名 API 与安全检查选项。",
+      "title": "公开 API 与对象模型",
+      "purpose": "梳理 Bot/AndroidBot/AbstractBot 与 FriendOps、GroupOps、MessageOps、FileOps、SystemOps、LoginOps 等接口如何组织能力域。",
       "page_notes": [
         {
           "content": "使用简体中文生成文档。对于本页面的每个小标题，在其前面生成一个简单的数字序号，如 `1.`, `1.1`, `1.2` 等，方便 DeepWiki 生成页面锚点"
         }
       ],
-      "parent": "Yogurt 模块"
+      "parent": "Acidify Core 设计"
     },
     {
-      "title": "服务启动与依赖注入",
-      "purpose": "记录 YogurtApp 启动流程，包括签名校验、安全提示、SessionStore 加载、Bot 构建与 Ktor 插件配置。",
+      "title": "登录流程与会话凭据",
+      "purpose": "描述 AppInfo、SessionStore、SignProvider、AndroidSignProvider、二维码状态事件与在线状态控制之间的协作机制。",
       "page_notes": [
         {
           "content": "使用简体中文生成文档。对于本页面的每个小标题，在其前面生成一个简单的数字序号，如 `1.`, `1.1`, `1.2` 等，方便 DeepWiki 生成页面锚点"
         }
       ],
-      "parent": "Yogurt 模块"
+      "parent": "Acidify Core 设计"
     },
     {
-      "title": "Milky API 层",
-      "purpose": "介绍 /api 路由、serve 包装器、鉴权与系统/消息/好友/群/文件等端点的日志与错误处理。",
+      "title": "网络客户端与上下文状态机",
+      "purpose": "解析 AbstractClient/LagrangeClient/KuromeClient 以及 PacketContext、TicketContext、HighwayContext 等上下文如何维护连接、心跳与传输状态。",
       "page_notes": [
         {
           "content": "使用简体中文生成文档。对于本页面的每个小标题，在其前面生成一个简单的数字序号，如 `1.`, `1.1`, `1.2` 等，方便 DeepWiki 生成页面锚点"
         }
       ],
-      "parent": "Yogurt 模块"
+      "parent": "Acidify Core 设计"
     },
     {
-      "title": "消息与实体转换",
-      "purpose": "描述 transformMessage、YogurtMessageBuildingContext、transformEssenceMessage 等如何在 Acidify 与 Milky 实体间做双向转换。",
+      "title": "服务调用框架与业务服务",
+      "purpose": "说明 internal.service 在 system、message、friend、group、file 维度的实现模式，以及请求类型、加密类型、响应解包的统一约定。",
       "page_notes": [
         {
           "content": "使用简体中文生成文档。对于本页面的每个小标题，在其前面生成一个简单的数字序号，如 `1.`, `1.1`, `1.2` 等，方便 DeepWiki 生成页面锚点"
         }
       ],
-      "parent": "Yogurt 模块"
+      "parent": "Acidify Core 设计"
     },
     {
-      "title": "事件发布通道",
-      "purpose": "说明 WebSocket、SSE、Webhook 等事件输出如何订阅 Event 并执行鉴权与推送。",
+      "title": "消息体系与段构建管线",
+      "purpose": "解释 BotIncomingMessage/BotOutgoingMessageBuilder、MessageParsingContext、MessageBuildingContext 与段类型之间的映射关系。",
       "page_notes": [
         {
           "content": "使用简体中文生成文档。对于本页面的每个小标题，在其前面生成一个简单的数字序号，如 `1.`, `1.1`, `1.2` 等，方便 DeepWiki 生成页面锚点"
         }
       ],
-      "parent": "Yogurt 模块"
+      "parent": "Acidify Core 设计"
     },
     {
-      "title": "自定义 JavaScript 脚本",
-      "purpose": "说明 Yogurt 如何创建 JS 引擎环境、注入全局对象与函数，并执行用户脚本以扩展程序功能。",
+      "title": "事件流、日志与缓存策略",
+      "purpose": "聚焦 AcidifyEvent 体系、内部信号转换、日志抽象、实体缓存与预热逻辑，帮助定位运行时行为和调试入口。",
       "page_notes": [
         {
           "content": "使用简体中文生成文档。对于本页面的每个小标题，在其前面生成一个简单的数字序号，如 `1.`, `1.1`, `1.2` 等，方便 DeepWiki 生成页面锚点"
         }
       ],
-      "parent": "Yogurt 模块"
+      "parent": "Acidify Core 设计"
     },
     {
-      "title": "yogurt-jvm 与运行包装",
-      "purpose": "介绍 yogurt-jvm 提供的 JVM 入口、UTF-8 输出与对 Ktor 插件兼容性的包装策略。",
+      "title": "协议数据定义与编码层",
+      "purpose": "总结 proto、tlv、json、message extra 目录中的数据结构组织方式，以及这些结构与 service 层之间的依赖关系。",
       "page_notes": [
         {
           "content": "使用简体中文生成文档。对于本页面的每个小标题，在其前面生成一个简单的数字序号，如 `1.`, `1.1`, `1.2` 等，方便 DeepWiki 生成页面锚点"
         }
       ],
-      "parent": "Yogurt 模块"
+      "parent": "Acidify Core 设计"
+    },
+    {
+      "title": "密码学与底层工具集",
+      "purpose": "介绍 internal.crypto、internal.math、internal.util 的关键实现和边界，强调其在登录、加解密、序列化流程中的作用。",
+      "page_notes": [
+        {
+          "content": "使用简体中文生成文档。对于本页面的每个小标题，在其前面生成一个简单的数字序号，如 `1.`, `1.1`, `1.2` 等，方便 DeepWiki 生成页面锚点"
+        }
+      ],
+      "parent": "Acidify Core 设计"
+    },
+    {
+      "title": "Yogurt 应用层",
+      "purpose": "介绍 yogurt 作为 Milky 协议实现的整体结构，重点说明其如何复用 acidify-core 并暴露服务端接口能力。",
+      "page_notes": [
+        {
+          "content": "使用简体中文生成文档。对于本页面的每个小标题，在其前面生成一个简单的数字序号，如 `1.`, `1.1`, `1.2` 等，方便 DeepWiki 生成页面锚点"
+        }
+      ]
+    },
+    {
+      "title": "启动流程与运行时生命周期",
+      "purpose": "说明 Initialization、YogurtApp、Shutdown 及多平台入口如何串联配置加载、Bot 初始化与服务启动。",
+      "page_notes": [
+        {
+          "content": "使用简体中文生成文档。对于本页面的每个小标题，在其前面生成一个简单的数字序号，如 `1.`, `1.1`, `1.2` 等，方便 DeepWiki 生成页面锚点"
+        }
+      ],
+      "parent": "Yogurt 应用层"
+    },
+    {
+      "title": "配置与安全策略",
+      "purpose": "梳理 YogurtConfig、路径管理、签名校验、登录保护与安全开关，解释默认值与风险控制点。",
+      "page_notes": [
+        {
+          "content": "使用简体中文生成文档。对于本页面的每个小标题，在其前面生成一个简单的数字序号，如 `1.`, `1.1`, `1.2` 等，方便 DeepWiki 生成页面锚点"
+        }
+      ],
+      "parent": "Yogurt 应用层"
+    },
+    {
+      "title": "Milky API 与处理器分层",
+      "purpose": "解析 HttpRoutes、MilkyApiContext、handler 子模块与错误模型，说明各类接口在鉴权、调用与返回格式上的一致性。",
+      "page_notes": [
+        {
+          "content": "使用简体中文生成文档。对于本页面的每个小标题，在其前面生成一个简单的数字序号，如 `1.`, `1.1`, `1.2` 等，方便 DeepWiki 生成页面锚点"
+        }
+      ],
+      "parent": "Yogurt 应用层"
+    },
+    {
+      "title": "实体转换与消息桥接",
+      "purpose": "讲清 transform 包中实体/事件/消息转换逻辑，特别是 Acidify 模型到 Milky 类型的映射策略与兼容边界。",
+      "page_notes": [
+        {
+          "content": "使用简体中文生成文档。对于本页面的每个小标题，在其前面生成一个简单的数字序号，如 `1.`, `1.1`, `1.2` 等，方便 DeepWiki 生成页面锚点"
+        }
+      ],
+      "parent": "Yogurt 应用层"
+    },
+    {
+      "title": "事件推送通道",
+      "purpose": "说明 WebSocket、SSE、Webhook 三类事件输出管道在订阅、鉴权、重连与投递语义上的差异。",
+      "page_notes": [
+        {
+          "content": "使用简体中文生成文档。对于本页面的每个小标题，在其前面生成一个简单的数字序号，如 `1.`, `1.1`, `1.2` 等，方便 DeepWiki 生成页面锚点"
+        }
+      ],
+      "parent": "Yogurt 应用层"
+    },
+    {
+      "title": "脚本扩展系统",
+      "purpose": "围绕 script 模块说明加载器、运行环境、句柄注入与标准库能力，并关联 yogurt-scripting 的类型包与示例项目。",
+      "page_notes": [
+        {
+          "content": "使用简体中文生成文档。对于本页面的每个小标题，在其前面生成一个简单的数字序号，如 `1.`, `1.1`, `1.2` 等，方便 DeepWiki 生成页面锚点"
+        }
+      ],
+      "parent": "Yogurt 应用层"
+    },
+    {
+      "title": "工程化与发布体系",
+      "purpose": "聚焦构建约定、跨平台编译、产物分发与文档站生成，让维护者快速定位版本与发布链路。",
+      "page_notes": [
+        {
+          "content": "使用简体中文生成文档。对于本页面的每个小标题，在其前面生成一个简单的数字序号，如 `1.`, `1.1`, `1.2` 等，方便 DeepWiki 生成页面锚点"
+        }
+      ]
+    },
+    {
+      "title": "Gradle 约定与依赖版本管理",
+      "purpose": "说明 settings、buildSrc 约定插件、libs.versions.toml 与多模块构建关系，帮助维护依赖升级与目标平台策略。",
+      "page_notes": [
+        {
+          "content": "使用简体中文生成文档。对于本页面的每个小标题，在其前面生成一个简单的数字序号，如 `1.`, `1.1`, `1.2` 等，方便 DeepWiki 生成页面锚点"
+        }
+      ],
+      "parent": "工程化与发布体系"
+    },
+    {
+      "title": "跨平台产物与运行入口",
+      "purpose": "解释 acidify-core-runner、yogurt-jvm 与 yogurt 主模块在 JVM/Native 目标上的入口函数、执行方式与差异。",
+      "page_notes": [
+        {
+          "content": "使用简体中文生成文档。对于本页面的每个小标题，在其前面生成一个简单的数字序号，如 `1.`, `1.1`, `1.2` 等，方便 DeepWiki 生成页面锚点"
+        }
+      ],
+      "parent": "工程化与发布体系"
+    },
+    {
+      "title": "JavaScript 与 npm 分发",
+      "purpose": "覆盖 acidify-core-js 的构建与 TypeScript 定义导出，以及 @acidify/yogurt 与平台子包的 optionalDependencies 分发策略。",
+      "page_notes": [
+        {
+          "content": "使用简体中文生成文档。对于本页面的每个小标题，在其前面生成一个简单的数字序号，如 `1.`, `1.1`, `1.2` 等，方便 DeepWiki 生成页面锚点"
+        }
+      ],
+      "parent": "工程化与发布体系"
+    },
+    {
+      "title": "文档站与 API 文档生成",
+      "purpose": "介绍 acidify-docs 的 Nextra 内容组织、搜索索引构建，以及 Dokka 输出到站点目录的集成方式。",
+      "page_notes": [
+        {
+          "content": "使用简体中文生成文档。对于本页面的每个小标题，在其前面生成一个简单的数字序号，如 `1.`, `1.1`, `1.2` 等，方便 DeepWiki 生成页面锚点"
+        }
+      ],
+      "parent": "工程化与发布体系"
     }
   ]
 }
