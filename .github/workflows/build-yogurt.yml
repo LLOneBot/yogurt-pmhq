@@ -306,7 +306,7 @@ jobs:
           PY
           )"
           echo "release_version=${version}" >> "$GITHUB_OUTPUT"
-          echo "release_tag=v${version}-build.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+          echo "release_tag=v${version}-dev.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
           echo "release_name=Yogurt v${version} (build ${{ github.run_number }})" >> "$GITHUB_OUTPUT"
 
       - name: Create release in SaltifyDev/yogurt-releases
