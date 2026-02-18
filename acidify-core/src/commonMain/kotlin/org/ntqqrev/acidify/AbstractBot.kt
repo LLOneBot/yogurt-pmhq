@@ -20,21 +20,21 @@ import org.ntqqrev.acidify.event.internal.KickSignal
 import org.ntqqrev.acidify.event.internal.MsgPushSignal
 import org.ntqqrev.acidify.internal.AbstractClient
 import org.ntqqrev.acidify.logging.LogHandler
-import org.ntqqrev.acidify.logging.LogMessage
+import org.ntqqrev.acidify.logging.LogLevel
 import org.ntqqrev.acidify.logging.Logger
 import org.ntqqrev.acidify.logging.loggingTag
 import org.ntqqrev.acidify.struct.BotFaceDetail
 import kotlin.js.JsName
 
-sealed class AbstractBot(scope: CoroutineScope) : CoroutineScope by scope {
+sealed class AbstractBot(
+    scope: CoroutineScope,
+    val minLogLevel: LogLevel,
+    val logHandler: LogHandler,
+) : CoroutineScope by scope {
     internal abstract val client: AbstractClient
 
     internal val logger = this.createLogger(this)
     internal val sharedEventFlow = MutableSharedFlow<AcidifyEvent>(
-        extraBufferCapacity = 100,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST
-    )
-    internal val sharedLogFlow = MutableSharedFlow<LogMessage>(
         extraBufferCapacity = 100,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )

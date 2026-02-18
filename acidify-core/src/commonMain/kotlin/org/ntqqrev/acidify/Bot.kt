@@ -1,8 +1,6 @@
 package org.ntqqrev.acidify
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.launch
 import org.ntqqrev.acidify.common.*
 import org.ntqqrev.acidify.internal.LagrangeClient
 import org.ntqqrev.acidify.internal.proto.system.SsoSecureInfo
@@ -18,7 +16,9 @@ class Bot internal constructor(
     val sessionStore: SessionStore,
     signProvider: SignProvider,
     scope: CoroutineScope,
-) : AbstractBot(scope) {
+    minLogLevel: LogLevel,
+    logHandler: LogHandler,
+) : AbstractBot(scope, minLogLevel, logHandler) {
     override val client = LagrangeClient(appInfo, sessionStore, signProvider, this::createLogger, scope)
 
     override val uin: Long
@@ -77,19 +77,9 @@ class Bot internal constructor(
             sessionStore = sessionStore,
             signProvider = signProvider,
             scope = scope,
+            minLogLevel = minLogLevel,
+            logHandler = logHandler,
         ).apply {
-            launch {
-                sharedLogFlow
-                    .filter { it.level >= minLogLevel }
-                    .collect {
-                        logHandler.handleLog(
-                            it.level,
-                            it.tag,
-                            it.messageSupplier(),
-                            it.throwable
-                        )
-                    }
-            }
             client.packetContext.startConnectLoop()
         }
     }

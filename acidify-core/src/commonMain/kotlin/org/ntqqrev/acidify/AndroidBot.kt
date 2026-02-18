@@ -1,8 +1,6 @@
 package org.ntqqrev.acidify
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.launch
 import org.ntqqrev.acidify.common.android.AndroidAppInfo
 import org.ntqqrev.acidify.common.android.AndroidSessionStore
 import org.ntqqrev.acidify.common.android.AndroidSignProvider
@@ -16,7 +14,9 @@ class AndroidBot internal constructor(
     val sessionStore: AndroidSessionStore,
     signProvider: AndroidSignProvider,
     scope: CoroutineScope,
-) : AbstractBot(scope) {
+    minLogLevel: LogLevel,
+    logHandler: LogHandler
+) : AbstractBot(scope, minLogLevel, logHandler) {
     override val client = KuromeClient(appInfo, sessionStore, signProvider, this::createLogger, scope)
 
     override val uin: Long
@@ -41,19 +41,9 @@ class AndroidBot internal constructor(
             sessionStore = sessionStore,
             signProvider = signProvider,
             scope = scope,
+            minLogLevel = minLogLevel,
+            logHandler = logHandler,
         ).apply {
-            launch {
-                sharedLogFlow
-                    .filter { it.level >= minLogLevel }
-                    .collect {
-                        logHandler.handleLog(
-                            it.level,
-                            it.tag,
-                            it.messageSupplier(),
-                            it.throwable
-                        )
-                    }
-            }
             client.packetContext.startConnectLoop()
         }
     }

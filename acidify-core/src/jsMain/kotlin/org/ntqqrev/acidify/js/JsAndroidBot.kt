@@ -1,8 +1,6 @@
 package org.ntqqrev.acidify.js
 
 import kotlinx.coroutines.await
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.promise
 import org.ntqqrev.acidify.AndroidBot
 import org.ntqqrev.acidify.common.android.AndroidAppInfo
@@ -44,7 +42,7 @@ class JsAndroidBot internal constructor(override val bot: AndroidBot) : JsAbstra
             logHandler: LogHandler
         ): Promise<JsAndroidBot> = jsScope.value.promise {
             JsAndroidBot(
-                AndroidBot(
+                AndroidBot.create(
                     appInfo = appInfo,
                     sessionStore = sessionStore,
                     signProvider = object : AndroidSignProvider {
@@ -76,21 +74,9 @@ class JsAndroidBot internal constructor(override val bot: AndroidBot) : JsAbstra
                         ) = signProvider.getDebugXwid(uin, data, guid, version, qua).await()
                     },
                     scope = jsScope.value,
-                ).apply {
-                    launch {
-                        sharedLogFlow
-                            .filter { it.level >= minLogLevel }
-                            .collect {
-                                logHandler.handleLog(
-                                    it.level,
-                                    it.tag,
-                                    it.messageSupplier(),
-                                    it.throwable
-                                )
-                            }
-                    }
-                    client.packetContext.startConnectLoop()
-                }
+                    minLogLevel = minLogLevel,
+                    logHandler = logHandler,
+                )
             )
         }
     }

@@ -48,7 +48,7 @@ class JsBot internal constructor(override val bot: Bot) : JsAbstractBot(bot) {
                     },
                     scope = jsScope.value,
                     minLogLevel = minLogLevel,
-                    logHandler = logHandler
+                    logHandler = logHandler,
                 )
             )
         }
