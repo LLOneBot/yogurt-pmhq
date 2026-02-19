@@ -45,6 +45,16 @@ suspend fun Application.transformAcidifyEvent(event: AcidifyEvent): Event? {
             )
         )
 
+        is PinChangedEvent -> Event.PeerPinChange(
+            time = Clock.System.now().epochSeconds,
+            selfId = bot.uin,
+            data = Event.PeerPinChange.Data(
+                messageScene = event.scene.toMilkyString(),
+                peerId = event.peerUin,
+                isPinned = event.isPinned
+            )
+        )
+
         is FriendRequestEvent -> Event.FriendRequest(
             time = Clock.System.now().epochSeconds,
             selfId = bot.uin,
@@ -176,6 +186,7 @@ suspend fun Application.transformAcidifyEvent(event: AcidifyEvent): Event? {
                 userId = event.userUin,
                 messageSeq = event.messageSeq,
                 faceId = event.faceId,
+                reactionType = event.type.toMilkyReactionType(),
                 isAdd = event.isAdd
             )
         )

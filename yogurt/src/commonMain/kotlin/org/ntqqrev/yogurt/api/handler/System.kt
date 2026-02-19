@@ -1,5 +1,7 @@
 package org.ntqqrev.yogurt.api.handler
 
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import org.ntqqrev.acidify.*
 import org.ntqqrev.milky.*
 import org.ntqqrev.yogurt.BuildKonfig
@@ -93,6 +95,27 @@ val GetGroupMemberInfo = ApiEndpoint.GetGroupMemberInfo.define {
     GetGroupMemberInfoOutput(
         member = member.toMilkyEntity()
     )
+}
+
+val GetPeerPins = ApiEndpoint.GetPeerPins.define {
+    val pins = bot.getPins()
+    GetPeerPinsOutput(
+        friends = pins.friendUins.map { friendUin ->
+            application.async { bot.getFriend(friendUin)?.toMilkyEntity() }
+        }.awaitAll().filterNotNull(),
+        groups = pins.groupUins.map { groupUin ->
+            application.async { bot.getGroup(groupUin)?.toMilkyEntity() }
+        }.awaitAll().filterNotNull(),
+    )
+}
+
+val SetPeerPin = ApiEndpoint.SetPeerPin.define {
+    when (it.messageScene) {
+        "friend" -> bot.setFriendPin(it.peerId, it.isPinned)
+        "group" -> bot.setGroupPin(it.peerId, it.isPinned)
+        else -> throw MilkyApiException(-400, "Unknown message scene: ${it.messageScene}")
+    }
+    SetPeerPinOutput()
 }
 
 val SetAvatar = ApiEndpoint.SetAvatar.define {

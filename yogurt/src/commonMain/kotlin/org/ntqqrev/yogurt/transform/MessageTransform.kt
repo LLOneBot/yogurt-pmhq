@@ -11,10 +11,7 @@ import org.ntqqrev.acidify.getFriend
 import org.ntqqrev.acidify.getGroup
 import org.ntqqrev.acidify.message.*
 import org.ntqqrev.acidify.message.ImageFormat
-import org.ntqqrev.milky.GroupEssenceMessage
-import org.ntqqrev.milky.IncomingMessage
-import org.ntqqrev.milky.IncomingSegment
-import org.ntqqrev.milky.OutgoingSegment
+import org.ntqqrev.milky.*
 import org.ntqqrev.yogurt.YogurtApp
 import org.ntqqrev.yogurt.util.resolveUri
 
@@ -55,6 +52,18 @@ suspend fun Application.transformMessage(msg: BotIncomingMessage): IncomingMessa
     }
 }
 
+suspend fun Application.transformForwardedMessage(msg: BotForwardedMessage): IncomingForwardedMessage {
+    return IncomingForwardedMessage(
+        messageSeq = msg.sequence,
+        senderName = msg.senderName,
+        avatarUrl = msg.avatarUrl,
+        time = msg.timestamp,
+        segments = msg.segments.map { segment ->
+            async { transformSegment(segment) }
+        }.awaitAll()
+    )
+}
+
 suspend fun Application.transformSegment(segment: BotIncomingSegment): IncomingSegment {
     val bot = dependencies.resolve<AbstractBot>()
     return when (segment) {
@@ -67,7 +76,8 @@ suspend fun Application.transformSegment(segment: BotIncomingSegment): IncomingS
         is BotIncomingSegment.Mention -> if (segment.uin != null) {
             IncomingSegment.Mention(
                 data = IncomingSegment.Mention.Data(
-                    userId = segment.uin!!
+                    userId = segment.uin!!,
+                    name = segment.name,
                 )
             )
         } else {
@@ -85,7 +95,13 @@ suspend fun Application.transformSegment(segment: BotIncomingSegment): IncomingS
 
         is BotIncomingSegment.Reply -> IncomingSegment.Reply(
             data = IncomingSegment.Reply.Data(
-                messageSeq = segment.sequence
+                messageSeq = segment.sequence,
+                senderId = segment.senderUin,
+                senderName = segment.senderName,
+                time = segment.timestamp,
+                segments = segment.segments.map {
+                    async { transformSegment(it) }
+                }.awaitAll(),
             )
         )
 
@@ -263,8 +279,8 @@ suspend fun Application.transformSegment(
             )
         }
 
-        is OutgoingSegment.Forward -> BotOutgoingSegment.Forward(
-            nodes = segment.data.messages.map { msg ->
+        is OutgoingSegment.Forward -> {
+            val nodes = segment.data.messages.map { msg ->
                 BotOutgoingSegment.Forward.Node(
                     senderUin = msg.userId,
                     senderName = msg.senderName,
@@ -273,6 +289,19 @@ suspend fun Application.transformSegment(
                     }.awaitAll()
                 )
             }
+            BotOutgoingSegment.Forward(
+                nodes = nodes,
+                title = segment.data.title ?: "群聊的聊天记录",
+                preview = segment.data.preview ?: nodes.take(4).map {
+                    it.senderName + ": " + it.segments.joinToString("")
+                },
+                summary = segment.data.summary ?: "查看${segment.data.messages.size}条转发消息",
+                prompt = segment.data.prompt ?: "[聊天记录]"
+            )
+        }
+
+        is OutgoingSegment.LightApp -> BotOutgoingSegment.LightApp(
+            jsonPayload = segment.data.jsonPayload
         )
     }
 }

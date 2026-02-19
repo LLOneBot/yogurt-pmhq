@@ -108,6 +108,8 @@ fun Route.configureMilkyApiHttpRoutes() {
     serve(GetGroupInfo)
     serve(GetGroupMemberList)
     serve(GetGroupMemberInfo)
+    serve(GetPeerPins)
+    serve(SetPeerPin)
     serve(SetAvatar)
     serve(SetNickname)
     serve(SetBio)

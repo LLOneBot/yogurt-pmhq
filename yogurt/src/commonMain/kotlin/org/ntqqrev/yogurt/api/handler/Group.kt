@@ -7,6 +7,7 @@ import org.ntqqrev.milky.*
 import org.ntqqrev.yogurt.api.MilkyApiException
 import org.ntqqrev.yogurt.api.define
 import org.ntqqrev.yogurt.transform.toEventType
+import org.ntqqrev.yogurt.transform.toIntReactionType
 import org.ntqqrev.yogurt.transform.toMilkyEntity
 import org.ntqqrev.yogurt.transform.transformEssenceMessage
 import org.ntqqrev.yogurt.util.resolveUri
@@ -133,8 +134,13 @@ val QuitGroup = ApiEndpoint.QuitGroup.define {
 val SendGroupMessageReaction = ApiEndpoint.SendGroupMessageReaction.define {
     bot.getGroup(it.groupId)
         ?: throw MilkyApiException(-404, "Group not found")
-    // TODO: will be it.reactionType in Milky 1.2
-    bot.setGroupMessageReaction(it.groupId, it.messageSeq, it.reaction, 1, it.isAdd)
+    bot.setGroupMessageReaction(
+        it.groupId,
+        it.messageSeq,
+        it.reaction,
+        it.reactionType.toIntReactionType(),
+        it.isAdd
+    )
     SendGroupMessageReactionOutput()
 }
 

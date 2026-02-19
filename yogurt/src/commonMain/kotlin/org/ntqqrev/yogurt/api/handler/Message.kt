@@ -8,6 +8,7 @@ import org.ntqqrev.milky.*
 import org.ntqqrev.yogurt.api.MilkyApiException
 import org.ntqqrev.yogurt.api.define
 import org.ntqqrev.yogurt.transform.toMessageScene
+import org.ntqqrev.yogurt.transform.transformForwardedMessage
 import org.ntqqrev.yogurt.transform.transformMessage
 import org.ntqqrev.yogurt.transform.transformSegment
 
@@ -154,16 +155,7 @@ val GetForwardedMessages = ApiEndpoint.GetForwardedMessages.define {
     val forwardedMessages = bot.getForwardedMessages(it.forwardId)
     val transformedMessages = forwardedMessages.map { msg ->
         with(application) {
-            async {
-                IncomingForwardedMessage(
-                    senderName = msg.senderName,
-                    avatarUrl = msg.avatarUrl,
-                    time = msg.timestamp,
-                    segments = msg.segments.map { segment ->
-                        async { transformSegment(segment) }
-                    }.awaitAll()
-                )
-            }
+            async { transformForwardedMessage(msg) }
         }
     }.awaitAll()
     GetForwardedMessagesOutput(

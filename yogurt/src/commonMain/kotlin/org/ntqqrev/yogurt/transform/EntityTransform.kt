@@ -153,3 +153,15 @@ fun String.toEventType() = when (this) {
     "invited_join_request" -> 22
     else -> throw IllegalArgumentException("Unknown notification type: $this")
 }
+
+fun Int.toMilkyReactionType() = when (this) {
+    1 -> "face"
+    2 -> "emoji"
+    else -> throw IllegalArgumentException("Unknown reaction type: $this")
+}
+
+fun String.toIntReactionType() = when (this) {
+    "face" -> 1
+    "emoji" -> 2
+    else -> throw IllegalArgumentException("Unknown reaction type: $this")
+}
