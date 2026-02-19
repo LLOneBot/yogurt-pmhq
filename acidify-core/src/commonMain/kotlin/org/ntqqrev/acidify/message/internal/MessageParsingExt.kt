@@ -126,6 +126,7 @@ internal fun AbstractBot.parseForwardedMessage(raw: CommonMessage): BotForwarded
         ?: "QQ用户"
     val avatarUrl = contentHead.forwardExt.avatar
     val message = BotForwardedMessage(
+        sequence = contentHead.sequence,
         senderName = senderName,
         avatarUrl = avatarUrl,
         timestamp = contentHead.time,
