@@ -19,6 +19,7 @@ internal object SetMemberTitle : NoOutputOidbService<SetMemberTitle.Req>(0x8fc, 
                 Oidb0x8FCReq.MemberInfo(
                     uid = payload.memberUid,
                     specialTitle = payload.specialTitle.encodeToByteArray(),
+                    specialTitleExpireTime = -1,
                 )
             )
         ).pbEncode()
