@@ -1,15 +1,16 @@
 package org.ntqqrev.yogurt
 
 import io.ktor.server.engine.*
-import io.ktor.server.plugins.di.dependencies
+import io.ktor.server.plugins.di.*
 import kotlinx.atomicfu.atomic
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.staticCFunction
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.ntqqrev.acidify.AbstractBot
 import org.ntqqrev.acidify.offline
 import platform.posix.SIGINT
-import platform.posix.exit
+import platform.posix._exit
 import platform.posix.signal
 
 val botRef = atomic<AbstractBot?>(null)
@@ -24,8 +25,12 @@ actual fun EmbeddedServer<*, *>.onSigint(hook: () -> Unit) {
     signal(SIGINT, staticCFunction { _ ->
         println("Received SIGINT, shutting down...")
         runBlocking {
-            botRef.value?.offline()
+            runCatching {
+                withTimeout(5000L) {
+                    botRef.value?.offline()
+                }
+            }
         }
-        exit(0)
+        _exit(0)
     })
 }
