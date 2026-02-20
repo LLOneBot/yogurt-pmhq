@@ -6,9 +6,8 @@ import kotlinx.atomicfu.atomic
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.staticCFunction
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
 import org.ntqqrev.acidify.AbstractBot
-import org.ntqqrev.acidify.offline
+import org.ntqqrev.yogurt.YogurtApp.t
 import platform.posix.SIGINT
 import platform.posix._exit
 import platform.posix.signal
@@ -23,14 +22,7 @@ actual fun EmbeddedServer<*, *>.onSigint(hook: () -> Unit) {
     // so we have to use a `exit(0)` to force the process to exit immediately after the shutdown hook is executed.
     // See KTOR-9308 and KTOR-9309 for more details.
     signal(SIGINT, staticCFunction { _ ->
-        println("Received SIGINT, shutting down...")
-        runBlocking {
-            runCatching {
-                withTimeout(5000L) {
-                    botRef.value?.offline()
-                }
-            }
-        }
+        t.println("收到 SIGINT 信号，正在关闭...")
         _exit(0)
     })
 }
