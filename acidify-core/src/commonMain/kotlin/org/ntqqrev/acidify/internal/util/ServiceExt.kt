@@ -54,3 +54,14 @@ internal suspend fun KuromeClient.getDebugXwidFor(service: WtLogin.AndroidLogin<
         qua = appInfo.qua,
     )
 }
+
+/**
+ * Triple of country code, mobile number and manual verify URL
+ */
+internal fun WtLogin.AndroidLogin.Resp.readSmsInfo(): Triple<String, String, String> {
+    val smsUrl = tlvPack[0x204u]?.decodeToString()
+    val tlv178Reader = tlvPack[0x178u]!!.reader()
+    val countryCode = tlv178Reader.readPrefixedString(Prefix.UINT_16 or Prefix.LENGTH_ONLY)
+    val phone = tlv178Reader.readPrefixedString(Prefix.UINT_16 or Prefix.LENGTH_ONLY)
+    return Triple(countryCode, phone, smsUrl ?: "")
+}

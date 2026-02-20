@@ -305,6 +305,9 @@ internal abstract class WtLogin<T, R>(
                 val code = tlv146.readInt()
                 val tag = tlv146.readPrefixedString(Prefix.UINT_16 or Prefix.LENGTH_ONLY)
                 val message = tlv146.readPrefixedString(Prefix.UINT_16 or Prefix.LENGTH_ONLY)
+                if (code == 160) {
+                    return Resp(state, tlvPack)
+                }
                 if (code == 237 && 0x543u in tlvPack) {
                     val tlv543 = tlvPack[0x543u]!!.pbDecode<AndroidTlvBody543>()
                     throw UnstableNetworkException(

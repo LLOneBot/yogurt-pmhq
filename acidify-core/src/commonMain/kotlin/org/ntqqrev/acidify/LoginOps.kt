@@ -123,6 +123,28 @@ suspend fun AndroidBot.passwordLogin(
         )
     )
 
+    suspend fun handleSms(countryCode: String, phone: String, smsUrl: String): WtLogin.AndroidLogin.Resp {
+        val smsCode = onRequireSmsCode(countryCode, phone, smsUrl)
+        return if (smsCode.isNotEmpty()) {
+            client.callService(
+                WtLogin.AndroidLogin.SubmitSMSCode,
+                WtLogin.AndroidLogin.SubmitSMSCode.Req(
+                    energy = client.getEnergyFor(WtLogin.AndroidLogin.SubmitSMSCode),
+                    debugXwid = client.getDebugXwidFor(WtLogin.AndroidLogin.SubmitSMSCode),
+                    smsCode = smsCode,
+                )
+            )
+        } else {
+            client.callService(
+                WtLogin.AndroidLogin.Tgtgt,
+                WtLogin.AndroidLogin.Tgtgt.Req(
+                    energy = client.getEnergyFor(WtLogin.AndroidLogin.Tgtgt),
+                    debugXwid = client.getDebugXwidFor(WtLogin.AndroidLogin.Tgtgt),
+                )
+            )
+        }
+    }
+
     if (result.state == 2u.toUByte()) { // Need captcha verify
         result.tlvPack[0x104u]?.let {
             sessionStore.state.tlv104 = it
@@ -140,6 +162,13 @@ suspend fun AndroidBot.passwordLogin(
                 ticket = ticket,
             )
         )
+        if (result.state == 160u.toUByte()) { // SMS required
+            result.tlvPack[0x104u]?.let {
+                sessionStore.state.tlv104 = it
+            }
+            val (countryCode, phone, smsUrl) = result.readSmsInfo()
+            result = handleSms(countryCode, phone, smsUrl)
+        }
     }
 
     if (result.state == 239u.toUByte()) { // Device lock via SMS code
@@ -149,41 +178,18 @@ suspend fun AndroidBot.passwordLogin(
         result.tlvPack[0x174u]?.let {
             sessionStore.state.tlv174 = it
         }
-        val smsUrl = result.tlvPack[0x204u]!!.decodeToString()
-        val tlv178Reader = result.tlvPack[0x178u]!!.reader()
-        val countryCode = tlv178Reader.readPrefixedString(Prefix.UINT_16 or Prefix.LENGTH_ONLY)
-        val phone = tlv178Reader.readPrefixedString(Prefix.UINT_16 or Prefix.LENGTH_ONLY)
-
+        val (countryCode, phone, smsUrl) = result.readSmsInfo()
         result = client.callService(
             WtLogin.AndroidLogin.FetchSMSCode,
             WtLogin.AndroidLogin.FetchSMSCode.Req(
                 debugXwid = client.getDebugXwidFor(WtLogin.AndroidLogin.FetchSMSCode),
             )
         )
-
         if (result.state == 160u.toUByte()) { // SMS required
             result.tlvPack[0x104u]?.let {
                 sessionStore.state.tlv104 = it
             }
-            val smsCode = onRequireSmsCode(countryCode, phone, smsUrl)
-            result = if (smsCode.isNotEmpty()) {
-                client.callService(
-                    WtLogin.AndroidLogin.SubmitSMSCode,
-                    WtLogin.AndroidLogin.SubmitSMSCode.Req(
-                        energy = client.getEnergyFor(WtLogin.AndroidLogin.SubmitSMSCode),
-                        debugXwid = client.getDebugXwidFor(WtLogin.AndroidLogin.SubmitSMSCode),
-                        smsCode = smsCode,
-                    )
-                )
-            } else {
-                client.callService(
-                    WtLogin.AndroidLogin.Tgtgt,
-                    WtLogin.AndroidLogin.Tgtgt.Req(
-                        energy = client.getEnergyFor(WtLogin.AndroidLogin.Tgtgt),
-                        debugXwid = client.getDebugXwidFor(WtLogin.AndroidLogin.Tgtgt),
-                    )
-                )
-            }
+            result = handleSms(countryCode, phone, smsUrl)
         }
     }
 
