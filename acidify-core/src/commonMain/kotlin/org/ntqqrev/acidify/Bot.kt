@@ -1,9 +1,10 @@
 package org.ntqqrev.acidify
 
 import kotlinx.coroutines.CoroutineScope
-import org.ntqqrev.acidify.common.*
+import org.ntqqrev.acidify.common.AppInfo
+import org.ntqqrev.acidify.common.SessionStore
+import org.ntqqrev.acidify.common.SignProvider
 import org.ntqqrev.acidify.internal.LagrangeClient
-import org.ntqqrev.acidify.internal.proto.system.SsoSecureInfo
 import org.ntqqrev.acidify.logging.LogHandler
 import org.ntqqrev.acidify.logging.LogLevel
 import kotlin.js.JsStatic
@@ -28,40 +29,6 @@ class Bot internal constructor(
     override val uid: String
         get() = sessionStore.uid.takeIf { it.isNotEmpty() }
             ?: throw IllegalStateException("用户尚未登录")
-
-    /**
-     * 发送自定义 SSO 数据包。
-     * **Ensure that you know what you are doing!**
-     * @param cmd 命令字符串
-     * @param payload 原始数据
-     * @param timeoutMillis 超时时间，默认 10000 毫秒
-     */
-    @UnsafeAcidifyApi
-    suspend fun sendPacket(cmd: String, payload: ByteArray, timeoutMillis: Long = 10000L): SsoResponse {
-        val sequence = client.ssoSequence++
-        return client.packetContext.sendPacket(
-            command = cmd,
-            sequence = sequence,
-            payload = payload,
-            ssoReservedMsgType = 0,
-            timeoutMillis = timeoutMillis,
-            ssoSecureInfo = if (client.signRequiredCommand.contains(cmd)) {
-                client.signProvider.sign(
-                    cmd = cmd,
-                    seq = sequence,
-                    src = payload,
-                ).let {
-                    SsoSecureInfo(
-                        sign = it.sign,
-                        token = it.token,
-                        extra = it.extra,
-                    )
-                }
-            } else {
-                null
-            }
-        )
-    }
 
     companion object {
         @JsStatic

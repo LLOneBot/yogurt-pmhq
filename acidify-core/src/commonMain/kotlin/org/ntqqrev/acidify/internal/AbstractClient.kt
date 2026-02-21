@@ -5,10 +5,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import org.ntqqrev.acidify.common.SsoResponse
+import org.ntqqrev.acidify.exception.ServiceException
 import org.ntqqrev.acidify.internal.context.FlashTransferContext
 import org.ntqqrev.acidify.internal.context.HighwayContext
 import org.ntqqrev.acidify.internal.context.PacketContext
 import org.ntqqrev.acidify.internal.context.TicketContext
+import org.ntqqrev.acidify.internal.proto.system.SsoSecureInfo
 import org.ntqqrev.acidify.internal.service.Service
 import org.ntqqrev.acidify.logging.Logger
 import kotlin.random.Random
@@ -50,6 +52,8 @@ internal sealed class AbstractClient(
         flashTransferContext,
     )
 
+    protected val logger = loggerFactory(this)
+
     suspend fun doPostOnlineLogic() {
         contextCollection.forEach {
             it.postOnline()
@@ -62,7 +66,30 @@ internal sealed class AbstractClient(
         }
     }
 
-    abstract suspend fun <T, R> callService(service: Service<T, R>, payload: T, timeout: Long = 10_000L): R
+    abstract suspend fun getSsoSecureInfo(cmd: String, seq: Int, src: ByteArray): SsoSecureInfo?
+
+    suspend fun <T, R> callService(service: Service<T, R>, payload: T, timeout: Long = 10_000L): R {
+        val sequence = ssoSequence++
+        val byteArray = service.build(this, payload)
+        val resp = packetContext.sendPacket(
+            command = service.cmd,
+            sequence = sequence,
+            payload = byteArray,
+            ssoReservedMsgType = service.androidSsoReservedMsgType ?: 32,
+            timeoutMillis = timeout,
+            requestType = service.ssoRequestType,
+            encryptType = service.ssoEncryptType,
+            ssoSecureInfo = getSsoSecureInfo(service.cmd, sequence, byteArray)
+        )
+        if (resp.retCode != 0) {
+            throw ServiceException(
+                service.cmd,
+                resp.retCode,
+                resp.extra ?: ""
+            )
+        }
+        return service.parse(this, resp.response)
+    }
 
     suspend fun <R> callService(service: Service<Unit, R>, timeout: Long = 10_000L): R =
         callService(service, Unit, timeout)

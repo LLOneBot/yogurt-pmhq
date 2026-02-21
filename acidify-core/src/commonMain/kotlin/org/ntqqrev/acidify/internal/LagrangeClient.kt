@@ -4,9 +4,8 @@ import kotlinx.coroutines.CoroutineScope
 import org.ntqqrev.acidify.common.AppInfo
 import org.ntqqrev.acidify.common.SessionStore
 import org.ntqqrev.acidify.common.SignProvider
-import org.ntqqrev.acidify.exception.ServiceException
+import org.ntqqrev.acidify.exception.UrlSignException
 import org.ntqqrev.acidify.internal.proto.system.SsoSecureInfo
-import org.ntqqrev.acidify.internal.service.Service
 import org.ntqqrev.acidify.internal.service.system.BotOnline
 import org.ntqqrev.acidify.logging.Logger
 
@@ -63,41 +62,23 @@ internal class LagrangeClient(
         "OidbSvcTrpcTcp.0x6d9_4"
     )
 
-    override suspend fun <T, R> callService(service: Service<T, R>, payload: T, timeout: Long): R {
-        val sequence = ssoSequence++
-        val byteArray = service.build(this, payload)
-        val resp = packetContext.sendPacket(
-            command = service.cmd,
-            sequence = sequence,
-            payload = byteArray,
-            ssoReservedMsgType = 0,
-            timeoutMillis = timeout,
-            requestType = service.ssoRequestType,
-            encryptType = service.ssoEncryptType,
-            ssoSecureInfo = if (signRequiredCommand.contains(service.cmd)) {
-                signProvider.sign(
-                    cmd = service.cmd,
-                    seq = sequence,
-                    src = byteArray,
-                ).let {
+    override suspend fun getSsoSecureInfo(cmd: String, seq: Int, src: ByteArray): SsoSecureInfo? {
+        return if (signRequiredCommand.contains(cmd)) {
+            try {
+                signProvider.sign(cmd, seq, src).let {
                     SsoSecureInfo(
                         sign = it.sign,
                         token = it.token,
                         extra = it.extra,
                     )
                 }
-            } else {
+            } catch (e: UrlSignException) {
+                logger.w(e) { "没有成功获取 $cmd (seq=$seq) 的签名，该操作可能会失败" }
                 null
             }
-        )
-        if (resp.retCode != 0) {
-            throw ServiceException(
-                service.cmd,
-                resp.retCode,
-                resp.extra ?: ""
-            )
+        } else {
+            null
         }
-        return service.parse(this, resp.response)
     }
 
     override suspend fun sendOnlinePacket() = callService(BotOnline)

@@ -9,6 +9,7 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.Serializable
+import org.ntqqrev.acidify.exception.UrlSignException
 
 /**
  * 通过 HTTP 接口进行签名的 [SignProvider] 实现
@@ -30,11 +31,15 @@ class UrlSignProvider(val url: String, val httpProxy: String? = null) : SignProv
     }
 
     override suspend fun sign(cmd: String, seq: Int, src: ByteArray): SignResult {
-        val value = client.post {
+        val resp = client.post {
             url(signUrl)
             contentType(ContentType.Application.Json)
             setBody(UrlSignRequest(cmd, seq, src.toHexString()))
-        }.body<UrlSignResponse>().value
+        }
+        if (resp.status != HttpStatusCode.OK) {
+            throw UrlSignException(resp.status.description, resp.status.value)
+        }
+        val value = resp.body<UrlSignResponse>().value
         return SignResult(
             sign = value.sign.hexToByteArray(),
             token = value.token.hexToByteArray(),

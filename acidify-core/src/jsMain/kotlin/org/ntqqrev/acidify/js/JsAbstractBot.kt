@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.promise
 import org.ntqqrev.acidify.*
+import org.ntqqrev.acidify.common.UnsafeAcidifyApi
 import org.ntqqrev.acidify.event.*
 import org.ntqqrev.acidify.message.BotForwardedMessage
 import org.ntqqrev.acidify.message.BotHistoryMessages
@@ -38,6 +39,11 @@ abstract class JsAbstractBot internal constructor(
         val job = jobMap[callback] ?: return false
         job.cancel()
         return true
+    }
+
+    @UnsafeAcidifyApi
+    fun unsafeSendPacket(cmd: String, payload: ByteArray, timeoutMillis: Long = 10000L) = promise {
+        bot.sendPacket(cmd, payload, timeoutMillis)
     }
 
     fun online(preloadContacts: Boolean = false) = promise { bot.online(preloadContacts) }

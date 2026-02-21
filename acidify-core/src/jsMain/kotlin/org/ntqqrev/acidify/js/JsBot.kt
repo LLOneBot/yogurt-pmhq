@@ -5,7 +5,6 @@ import kotlinx.coroutines.promise
 import org.ntqqrev.acidify.Bot
 import org.ntqqrev.acidify.common.AppInfo
 import org.ntqqrev.acidify.common.SessionStore
-import org.ntqqrev.acidify.common.UnsafeAcidifyApi
 import org.ntqqrev.acidify.logging.LogHandler
 import org.ntqqrev.acidify.logging.LogLevel
 import org.ntqqrev.acidify.login
@@ -16,11 +15,6 @@ import kotlin.js.Promise
 @JsName("Bot")
 @AcidifyJsWrapper
 class JsBot internal constructor(override val bot: Bot) : JsAbstractBot(bot) {
-    @UnsafeAcidifyApi
-    fun unsafeSendPacket(cmd: String, payload: ByteArray, timeoutMillis: Long = 10000L) = promise {
-        bot.sendPacket(cmd, payload, timeoutMillis)
-    }
-
     fun login(queryInterval: Long = 3000L, preloadContacts: Boolean = false) = promise {
         bot.login(queryInterval, preloadContacts)
     }

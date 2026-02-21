@@ -12,6 +12,7 @@ import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.ntqqrev.acidify.common.SignResult
+import org.ntqqrev.acidify.exception.UrlSignException
 
 /**
  * 通过 HTTP 接口进行签名的 [AndroidSignProvider] 实现
@@ -41,7 +42,7 @@ class AndroidUrlSignProvider(val url: String, val httpProxy: String? = null) : A
         version: String,
         qua: String
     ): SignResult {
-        val data = client.post {
+        val resp = client.post {
             url {
                 takeFrom(base)
                 appendPathSegments("sign")
@@ -58,11 +59,18 @@ class AndroidUrlSignProvider(val url: String, val httpProxy: String? = null) : A
                     qua = qua,
                 )
             )
-        }.body<AndroidUrlSignResponse<AndroidUrlSignValue>>().data
+        }
+        if (resp.status != HttpStatusCode.OK) {
+            throw UrlSignException(resp.status.description, resp.status.value)
+        }
+        val respBody = resp.body<AndroidUrlSignResponse<AndroidUrlSignValue>>()
+        if (respBody.code != 0 || respBody.data == null) {
+            throw UrlSignException(respBody.msg, respBody.code)
+        }
         return SignResult(
-            sign = data.sign.hexToByteArray(),
-            token = data.token.hexToByteArray(),
-            extra = data.extra.hexToByteArray(),
+            sign = respBody.data.sign.hexToByteArray(),
+            token = respBody.data.token.hexToByteArray(),
+            extra = respBody.data.extra.hexToByteArray(),
         )
     }
 
@@ -74,7 +82,7 @@ class AndroidUrlSignProvider(val url: String, val httpProxy: String? = null) : A
         version: String,
         qua: String
     ): ByteArray {
-        val data = client.post {
+        val resp = client.post {
             url {
                 takeFrom(base)
                 appendPathSegments("energy")
@@ -90,8 +98,15 @@ class AndroidUrlSignProvider(val url: String, val httpProxy: String? = null) : A
                     qua = qua,
                 )
             )
-        }.body<AndroidUrlSignResponse<String>>().data
-        return data.hexToByteArray()
+        }
+        if (resp.status != HttpStatusCode.OK) {
+            throw UrlSignException(resp.status.description, resp.status.value)
+        }
+        val respBody = resp.body<AndroidUrlSignResponse<String>>()
+        if (respBody.code != 0 || respBody.data == null) {
+            throw UrlSignException(respBody.msg, respBody.code)
+        }
+        return respBody.data.hexToByteArray()
     }
 
     override suspend fun getDebugXwid(
@@ -101,7 +116,7 @@ class AndroidUrlSignProvider(val url: String, val httpProxy: String? = null) : A
         version: String,
         qua: String
     ): ByteArray {
-        val data = client.post {
+        val resp = client.post {
             url {
                 takeFrom(base)
                 appendPathSegments("get_tlv553")
@@ -116,8 +131,15 @@ class AndroidUrlSignProvider(val url: String, val httpProxy: String? = null) : A
                     qua = qua,
                 )
             )
-        }.body<AndroidUrlSignResponse<String>>().data
-        return data.hexToByteArray()
+        }
+        if (resp.status != HttpStatusCode.OK) {
+            throw UrlSignException(resp.status.description, resp.status.value)
+        }
+        val respBody = resp.body<AndroidUrlSignResponse<String>>()
+        if (respBody.code != 0 || respBody.data == null) {
+            throw UrlSignException(respBody.msg, respBody.code)
+        }
+        return respBody.data.hexToByteArray()
     }
 }
 
@@ -153,7 +175,9 @@ private data class AndroidUrlDebugXwidRequest(
 
 @Serializable
 private data class AndroidUrlSignResponse<T>(
-    val data: T
+    val code: Int,
+    val msg: String,
+    val data: T?
 )
 
 @Serializable

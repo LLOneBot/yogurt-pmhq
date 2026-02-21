@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.serialization.json.Json
+import org.ntqqrev.acidify.common.SsoResponse
+import org.ntqqrev.acidify.common.UnsafeAcidifyApi
 import org.ntqqrev.acidify.entity.BotFriend
 import org.ntqqrev.acidify.entity.BotGroup
 import org.ntqqrev.acidify.entity.internal.CacheUtility
@@ -136,5 +138,25 @@ sealed class AbstractBot(
 
     internal suspend fun HttpRequestBuilder.withBkn() {
         parameter("bkn", getCsrfToken())
+    }
+
+    /**
+     * 发送自定义 SSO 数据包。
+     * **Ensure that you know what you are doing!**
+     * @param cmd 命令字符串
+     * @param payload 原始数据
+     * @param timeoutMillis 超时时间，默认 10000 毫秒
+     */
+    @UnsafeAcidifyApi
+    suspend fun sendPacket(cmd: String, payload: ByteArray, timeoutMillis: Long = 10000L): SsoResponse {
+        val sequence = client.ssoSequence++
+        return client.packetContext.sendPacket(
+            command = cmd,
+            sequence = sequence,
+            payload = payload,
+            ssoReservedMsgType = 0,
+            timeoutMillis = timeoutMillis,
+            ssoSecureInfo = client.getSsoSecureInfo(cmd, sequence, payload)
+        )
     }
 }
