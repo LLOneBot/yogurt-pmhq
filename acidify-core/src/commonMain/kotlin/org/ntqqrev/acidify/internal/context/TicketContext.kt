@@ -5,6 +5,7 @@ import io.ktor.client.plugins.cookies.*
 import io.ktor.client.request.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import org.ntqqrev.acidify.exception.WebApiException
 import org.ntqqrev.acidify.internal.AbstractClient
 import org.ntqqrev.acidify.internal.KuromeClient
 import org.ntqqrev.acidify.internal.LagrangeClient
@@ -60,13 +61,17 @@ internal class TicketContext(client: AbstractClient) : AbstractContext(client) {
                 "&clientuin=${client.uin}" +
                 "&clientkey=$clientKey" +
                 "&u1=$jump"
-        httpClient.get(urlString)
+        val resp = httpClient.get(urlString)
         val cookies = httpClient.cookies(urlString)
         cookies.firstOrNull { it.name == "skey" }
-            ?.let {
-                currentSKey.refreshWith(it.value, 86400L)
+            ?.let { currentSKey.refreshWith(it.value, 86400L) }
+            ?: when (client) {
+                is LagrangeClient -> throw WebApiException("获取 SKey 失败", resp.status.value)
+                is KuromeClient -> {
+                    logger.w { "通过 URL 刷新 SKey 失败，使用 SessionStore 中的 SKey（可能已经过期）" }
+                    currentSKey.refreshWith(client.sessionStore.wloginSigs.sKey.toHexString(), 86400L)
+                }
             }
-            ?: throw RuntimeException("获取 SKey 失败")
         return currentSKey.value
     }
 
