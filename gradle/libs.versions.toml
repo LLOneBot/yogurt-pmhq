@@ -23,6 +23,7 @@ logback = "1.5.32"
 build-konfig = "0.17.1"
 maven-publish = "0.36.0"
 dokka = "2.1.0"
+shadow = "9.3.2"
 
 [libraries]
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
@@ -84,7 +85,7 @@ ktor-server = [
 [plugins]
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kotlinx-atomicfu = { id = "org.jetbrains.kotlinx.atomicfu", version.ref = "kx-atomicfu" }
-ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
 build-konfig = { id = "com.codingfeline.buildkonfig", version.ref = "build-konfig" }
 maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "maven-publish" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }

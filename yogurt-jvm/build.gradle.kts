@@ -1,6 +1,7 @@
 plugins {
     id("buildsrc.convention.kotlin-jvm")
-    alias(libs.plugins.ktor)
+    application
+    alias(libs.plugins.shadow)
 }
 
 application {
