@@ -102,7 +102,7 @@ jobs:
           cache: gradle
 
       - name: Build yogurt-jvm fat jar
-        run: ./gradlew :yogurt-jvm:buildFatJar --no-daemon
+        run: ./gradlew :yogurt-jvm:shadowJar --no-daemon
 
       - name: Upload fat jar artifact
         uses: actions/upload-artifact@v4
