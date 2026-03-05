@@ -95,6 +95,10 @@ internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
                         }
                     }
                     handleReceiveLoop()
+                } catch (_: ClosedByteChannelException) {
+                    break
+                } catch (_: kotlinx.coroutines.CancellationException) {
+                    break
                 } catch (e: Exception) {
                     logger.e(e) { "接收数据包时出现错误，5s 后尝试重新连接" }
                     cleanupPendingRequests(e)
