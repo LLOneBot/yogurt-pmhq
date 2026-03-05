@@ -2,7 +2,6 @@
 
 package org.ntqqrev.yogurt
 
-import com.github.ajalt.mordant.platform.MultiplatformSystem.exitProcess
 import com.github.ajalt.mordant.rendering.TextColors
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking

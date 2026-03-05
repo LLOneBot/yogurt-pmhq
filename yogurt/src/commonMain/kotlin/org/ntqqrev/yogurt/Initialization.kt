@@ -1,6 +1,5 @@
 package org.ntqqrev.yogurt
 
-import com.github.ajalt.mordant.platform.MultiplatformSystem.exitProcess
 import com.github.ajalt.mordant.rendering.TextColors
 import io.ktor.server.application.*
 import io.ktor.server.plugins.di.*
