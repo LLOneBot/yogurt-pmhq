@@ -10,7 +10,7 @@
 
 运行前请先启动 PMHQ，并确保它的 WebSocket 服务可以访问。默认情况下，Yogurt 会连接 `ws://localhost:13000/ws`。随后启动 Yogurt；如果当前工作目录下还没有 `config.json`，程序会先生成一份默认配置文件，等待你修改后再继续。
 
-Yogurt 启动后会先检查当前 PMHQ 是否已经登录；如果已经登录且账号正好是这个 QQ 号，就会直接进入初始化；如果已经登录但账号不是这个 QQ 号，则会直接报错，避免误用错误账号；如果当前尚未登录，则会检查 PMHQ 的快速登录列表，在列表中找到该 QQ 号时优先尝试快速登录，失败后再回落到二维码登录。不填写 `quickLoginUin` 时，Yogurt 会直接按照当前 PMHQ 状态继续，必要时进入二维码登录。登录成功后，Yogurt 会继续执行初始化，并开始对外提供 Milky 接口。
+填写了 `quickLoginUin` 时，Yogurt 启动后会先检查当前 PMHQ 是否已经登录；如果已经登录且账号正好是这个 QQ 号，就会直接进入初始化；如果已经登录但账号不是这个 QQ 号，则会直接报错，避免误用错误账号；如果当前尚未登录，则会检查 PMHQ 的快速登录列表，在列表中找到该 QQ 号时优先尝试快速登录，失败后再回落到二维码登录。不填写 `quickLoginUin` 时，Yogurt 会直接按照当前 PMHQ 状态继续，必要时进入二维码登录。登录成功后，Yogurt 会继续执行初始化，并开始对外提供 Milky 接口。
 
 Yogurt 启动并登录完成后，HTTP API 的地址是 `http://<host>:<port>/api`，事件接口的地址是 `http://<host>:<port>/event`。如果设置了 `accessToken`，调用方需要使用同一个令牌完成认证；在 HTTP 场景下，通常使用 `Authorization: Bearer <token>` 请求头即可。
 
