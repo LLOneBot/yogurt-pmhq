@@ -2,11 +2,15 @@ FROM eclipse-temurin:25-jdk AS builder
 
 WORKDIR /workspace
 
+ARG YOGURT_GIT_HASH=unknown
+
 RUN apt-get update \
     && apt-get install -y --no-install-recommends build-essential clang curl unzip xz-utils \
     && rm -rf /var/lib/apt/lists/*
 
 COPY . .
+
+ENV YOGURT_GIT_HASH=${YOGURT_GIT_HASH}
 
 RUN ./gradlew :yogurt:linkReleaseExecutableLinuxX64 --no-daemon \
     && cp /workspace/yogurt/build/bin/linuxX64/releaseExecutable/yogurt.kexe /tmp/yogurt

@@ -235,6 +235,8 @@ jobs:
           file: docker/Dockerfile
           platforms: linux/amd64
           push: true
+          build-args: |
+            YOGURT_GIT_HASH=${{ github.sha }}
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
           cache-from: type=gha
