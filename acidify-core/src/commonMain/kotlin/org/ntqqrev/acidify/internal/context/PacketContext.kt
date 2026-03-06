@@ -8,6 +8,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.io.IOException
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.decodeFromJsonElement
 import org.ntqqrev.acidify.common.SsoResponse
 import org.ntqqrev.acidify.internal.AbstractClient
@@ -17,11 +18,11 @@ import org.ntqqrev.acidify.internal.proto.system.SsoSecureInfo
 import org.ntqqrev.acidify.internal.service.EncryptType
 import org.ntqqrev.acidify.internal.service.RequestType
 import org.ntqqrev.acidify.internal.service.system.Heartbeat
+import org.ntqqrev.acidify.internal.util.ensureLagrange
 
 internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
-    private companion object {
-        const val pmhqWsUrl = "ws://localhost:13000/ws" // TODO: make this configurable
-    }
+    private val pmhqWsUrl: String
+        get() = client.ensureLagrange().pmhqUrl
 
     private val pmhqJson = Json {
         encodeDefaults = true
@@ -37,6 +38,8 @@ internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
     private val pendingCalls = mutableMapOf<String, CompletableDeferred<PmhqCallResponse>>()
     private val sendPacketMutex = Mutex()
     private val mapQueryMutex = Mutex()
+    private val eventListenerMutex = Mutex()
+    private val eventListeners = mutableMapOf<String, suspend (String, PmhqEventData) -> Unit>()
     private var startConnectLoopJob: Job? = null
     private var heartbeatJob: Job? = null
     private var closeRequested = false
@@ -66,9 +69,23 @@ internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
         heartbeatJob = null
     }
 
-    suspend fun fetchSelfInfo(timeoutMillis: Long = 10_000L): PmhqSelfInfo {
+    suspend fun addEventListener(listener: suspend (String, PmhqEventData) -> Unit): String {
+        val listenerId = "pmhq-event-${client.ssoSequence++}"
+        eventListenerMutex.withLock { eventListeners[listenerId] = listener }
+        return listenerId
+    }
+
+    suspend fun removeEventListener(listenerId: String) {
+        eventListenerMutex.withLock { eventListeners.remove(listenerId) }
+    }
+
+    suspend fun callFunction(
+        function: String,
+        args: List<JsonElement> = emptyList(),
+        timeoutMillis: Long = 10_000L,
+    ): JsonElement? {
         connectionReady.await()
-        val echo = "getSelfInfo-${client.ssoSequence++}"
+        val echo = "$function-${client.ssoSequence++}"
         val deferred = CompletableDeferred<PmhqCallResponse>()
         mapQueryMutex.withLock { pendingCalls[echo] = deferred }
         try {
@@ -76,26 +93,30 @@ internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
                 PmhqCallFrame(
                     data = PmhqCallData(
                         echo = echo,
-                        func = "getSelfInfo",
+                        func = function,
+                        args = args,
                     )
                 )
             )
             val response = withTimeout(timeoutMillis) { deferred.await() }
-            if (response.code != 0) {
-                throw IOException("PMHQ call getSelfInfo failed: ${response.message}")
-            }
-            val result = response.result
-                ?: throw IOException("PMHQ call getSelfInfo returned an empty result")
-            val selfInfo = pmhqJson.decodeFromJsonElement<PmhqSelfInfoPayload>(result)
-            return PmhqSelfInfo(
-                uin = selfInfo.uin.toLongOrNull()
-                    ?: throw IOException("PMHQ call getSelfInfo returned an invalid uin"),
-                uid = selfInfo.uid,
-            )
+            if (response.code != 0) throw IOException("PMHQ call $function failed: ${response.message}")
+            return response.result
         } catch (e: Exception) {
             mapQueryMutex.withLock { pendingCalls.remove(echo) }
             throw e
         }
+    }
+
+    suspend fun fetchSelfInfo(timeoutMillis: Long = 10_000L): PmhqSelfInfo {
+        val result = callFunction("getSelfInfo", timeoutMillis = timeoutMillis)
+            ?: throw IOException("PMHQ call getSelfInfo returned an empty result")
+        val selfInfo = pmhqJson.decodeFromJsonElement<PmhqSelfInfoPayload>(result)
+        return PmhqSelfInfo(
+            uin = selfInfo.uin.toLongOrNull() ?: 0L,
+            uid = selfInfo.uid,
+            online = selfInfo.online,
+            nick = selfInfo.nick,
+        )
     }
 
     suspend fun startConnectLoop() {
@@ -220,7 +241,7 @@ internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
         when (packet.type) {
             "recv" -> handleRecv(packet)
             "call" -> handleCall(packet)
-            else -> logger.v { "收到未知的 PMHQ 消息：$text" }
+            else -> handleEvent(packet, text)
         }
     }
 
@@ -259,6 +280,22 @@ internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
             result = data.result,
         )
         mapQueryMutex.withLock { pendingCalls.remove(echo) }?.complete(response)
+    }
+
+    private suspend fun handleEvent(packet: PmhqIncomingFrame, rawText: String) {
+        val event = packet.data?.let {
+            runCatching { pmhqJson.decodeFromJsonElement<PmhqEventData>(it) }.getOrNull()
+        }
+        if (event == null) {
+            logger.v { "收到未知的 PMHQ 消息：$rawText" }
+            return
+        }
+        val listeners = eventListenerMutex.withLock { eventListeners.values.toList() }
+        listeners.forEach { listener ->
+            client.launch {
+                listener(packet.type, event)
+            }
+        }
     }
 
     private suspend fun cleanupPendingRequests(error: Throwable) {

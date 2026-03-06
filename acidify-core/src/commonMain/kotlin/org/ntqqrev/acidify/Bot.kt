@@ -3,7 +3,6 @@ package org.ntqqrev.acidify
 import kotlinx.coroutines.CoroutineScope
 import org.ntqqrev.acidify.common.AppInfo
 import org.ntqqrev.acidify.common.SessionStore
-import org.ntqqrev.acidify.common.SignProvider
 import org.ntqqrev.acidify.internal.LagrangeClient
 import org.ntqqrev.acidify.logging.LogHandler
 import org.ntqqrev.acidify.logging.LogLevel
@@ -15,12 +14,12 @@ import kotlin.js.JsStatic
 class Bot(
     val appInfo: AppInfo,
     val sessionStore: SessionStore,
-    signProvider: SignProvider,
+    val pmhqUrl: String,
     scope: CoroutineScope,
     minLogLevel: LogLevel,
     logHandler: LogHandler,
 ) : AbstractBot(scope, minLogLevel, logHandler) {
-    override val client = LagrangeClient(appInfo, sessionStore, signProvider, this::createLogger, scope)
+    override val client = LagrangeClient(appInfo, sessionStore, pmhqUrl, this::createLogger, scope)
 
     override val uin: Long
         get() = sessionStore.uin.takeIf { it != 0L }
@@ -36,14 +35,14 @@ class Bot(
         fun create(
             appInfo: AppInfo,
             sessionStore: SessionStore,
-            signProvider: SignProvider,
+            pmhqUrl: String,
             scope: CoroutineScope,
             minLogLevel: LogLevel,
             logHandler: LogHandler,
         ): Bot = Bot(
             appInfo = appInfo,
             sessionStore = sessionStore,
-            signProvider = signProvider,
+            pmhqUrl = pmhqUrl,
             scope = scope,
             minLogLevel = minLogLevel,
             logHandler = logHandler,

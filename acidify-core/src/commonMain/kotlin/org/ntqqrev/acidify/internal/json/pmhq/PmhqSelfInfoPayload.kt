@@ -6,4 +6,6 @@ import kotlinx.serialization.Serializable
 internal class PmhqSelfInfoPayload(
     val uin: String = "",
     val uid: String = "",
+    val online: Boolean = false,
+    val nick: String = "",
 )

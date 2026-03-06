@@ -15,6 +15,8 @@ import org.ntqqrev.acidify.logging.LogLevel
 @Serializable
 class YogurtConfig(
     val signApiUrl: String = "",
+    val pmhqUrl: String = "ws://localhost:13000/ws",
+    val quickLoginUin: Long? = null,
     val protocol: Protocol = Protocol(),
     val androidCredentials: AndroidCredentials = AndroidCredentials(),
     val androidUseLegacySign: Boolean = false,
@@ -65,6 +67,7 @@ class YogurtConfig(
             allowComments = true
             allowTrailingComma = true
             ignoreUnknownKeys = true
+            explicitNulls = true
         }
 
         fun loadFromFile(): YogurtConfig {

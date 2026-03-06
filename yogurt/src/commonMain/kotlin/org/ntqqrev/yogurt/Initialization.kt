@@ -12,7 +12,6 @@ import kotlinx.io.writeString
 import org.ntqqrev.acidify.*
 import org.ntqqrev.acidify.common.AppInfo
 import org.ntqqrev.acidify.common.SessionStore
-import org.ntqqrev.acidify.common.UrlSignProvider
 import org.ntqqrev.acidify.common.android.AndroidAppInfo
 import org.ntqqrev.acidify.common.android.AndroidSessionStore
 import org.ntqqrev.acidify.common.android.AndroidSignProvider
@@ -27,7 +26,6 @@ import org.ntqqrev.yogurt.util.AndroidLegacyUrlSignProvider
 import org.ntqqrev.yogurt.util.logHandler
 
 suspend fun Application.initializePC(): Bot {
-    val signProvider = UrlSignProvider(config.signApiUrl)
     val sessionStore: SessionStore = if (SystemFileSystem.exists(sessionStorePath)) {
         SystemFileSystem.source(sessionStorePath).buffered().use {
             SessionStore.fromJson(it.readString())
@@ -38,7 +36,7 @@ suspend fun Application.initializePC(): Bot {
     val bot = Bot(
         appInfo = appInfo,
         sessionStore = sessionStore,
-        signProvider = signProvider,
+        pmhqUrl = config.pmhqUrl,
         scope = this@initializePC, // application is a CoroutineScope
         minLogLevel = config.logging.coreLogLevel,
         logHandler = YogurtApp.logHandler,
@@ -137,7 +135,10 @@ suspend fun Application.initializeAndroid(): AndroidBot {
 
 suspend fun Application.botLogin() {
     when (val bot = dependencies.resolve<AbstractBot>()) {
-        is Bot -> bot.login(preloadContacts = config.preloadContacts)
+        is Bot -> bot.login(
+            preloadContacts = config.preloadContacts,
+            quickLoginUin = config.quickLoginUin,
+        )
         is AndroidBot -> {
             fun onRequireCaptchaTicket(captchaUrl: String): String {
                 val queryParams = captchaUrl.split("?")[1].replace("uin=0", "uin=${bot.uin}")

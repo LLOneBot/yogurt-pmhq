@@ -3,7 +3,6 @@ package org.ntqqrev.acidify.internal
 import kotlinx.coroutines.CoroutineScope
 import org.ntqqrev.acidify.common.AppInfo
 import org.ntqqrev.acidify.common.SessionStore
-import org.ntqqrev.acidify.common.SignProvider
 import org.ntqqrev.acidify.internal.proto.system.SsoSecureInfo
 import org.ntqqrev.acidify.internal.service.system.BotOnline
 import org.ntqqrev.acidify.logging.Logger
@@ -11,7 +10,7 @@ import org.ntqqrev.acidify.logging.Logger
 internal class LagrangeClient(
     val appInfo: AppInfo,
     val sessionStore: SessionStore,
-    signProvider: SignProvider,
+    val pmhqUrl: String,
     loggerFactory: (Any) -> Logger,
     scope: CoroutineScope,
 ) : AbstractClient(loggerFactory, scope) {
