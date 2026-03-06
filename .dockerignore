@@ -1,0 +1,13 @@
+.git
+.github
+.gradle
+.idea
+.kotlin
+**/build
+**/node_modules
+acidify-core-js
+acidify-docs
+kotlin-js-store
+yogurt-scripting
+yogurt-npm-packages
+*.iml

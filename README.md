@@ -87,6 +87,18 @@ Yogurt 启动并登录完成后，HTTP API 的地址是 `http://<host>:<port>/ap
 
 见 [Yogurt 文档的“日志配置”部分](https://acidify.ntqqrev.org/yogurt/configuration#%E6%97%A5%E5%BF%97%E9%85%8D%E7%BD%AE)。
 
+## Docker 部署
+
+如果准备把 Yogurt 和 PMHQ 一起部署，仓库里已经提供了一套可以直接使用的 Docker 文件，位于 `docker/` 目录。`docker/docker-compose.yml` 默认使用 `ghcr.io/llonebot/yogurt-pmhq:latest`，并将 `pmhq` 和 `yogurt` 放在同一个网络里。Yogurt 会直接通过容器名 `pmhq` 连接 `ws://pmhq:13000/ws`，不需要再额外处理容器间通信。
+
+PMHQ 的 QQ 配置目录会挂载到独立卷 `qq_volume`。Yogurt 的运行目录会挂载到 `./data`，启动时自动生成 `config.json` 和脚本目录，适合长期保留登录状态与本地数据。镜像内部运行的是 `linuxX64` 的 Kotlin/Native 可执行文件，而不是 JVM fat jar，因此运行时占用会更小一些。
+
+首次使用时，在仓库根目录执行 `docker compose -f docker/docker-compose.yml up -d` 即可。启动后，Yogurt 会根据容器环境变量自动写出配置文件。最常用的几项已经放在 compose 文件里，包括 `YOGURT_PORT`、`YOGURT_ACCESS_TOKEN`、`QUICK_LOGIN_UIN`、`PRELOAD_CONTACTS`、`REPORT_SELF_MESSAGE` 和 `SKIP_SECURITY_CHECK`。
+
+如果需要跨域访问，可以填写 `HTTP_CORS_ORIGINS`，多个来源使用逗号分隔。如果需要事件推送，可以填写 `WEBHOOK_URLS`，同样使用逗号分隔，并在需要时通过 `WEBHOOK_ACCESS_TOKEN` 配置推送鉴权。默认情况下，HTTP 接口会映射到宿主机的 `3000` 端口，PMHQ 不对外暴露端口，只在 compose 内部网络中提供服务。
+
+Yogurt 容器额外写入了 `host.docker.internal:host-gateway`，因此 webhook 或其他回调服务如果运行在宿主机上，也可以直接从容器内访问。如果你确实需要从宿主机直接访问 PMHQ，再自行给 `pmhq` 服务补端口映射即可。
+
 ## 支持平台
 
 - Kotlin/JVM

@@ -5,9 +5,56 @@ on:
 
 permissions:
   contents: write
+  packages: write
 
 jobs:
+  resolve-meta:
+    runs-on: ubuntu-latest
+
+    outputs:
+      release_version: ${{ steps.meta.outputs.release_version }}
+      release_tag: ${{ steps.meta.outputs.release_tag }}
+      release_name: ${{ steps.meta.outputs.release_name }}
+      docker_image: ${{ steps.meta.outputs.docker_image }}
+      docker_version_tag: ${{ steps.meta.outputs.docker_version_tag }}
+      docker_sha_tag: ${{ steps.meta.outputs.docker_sha_tag }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Resolve release metadata
+        id: meta
+        run: |
+          set -euo pipefail
+
+          version="$(python3 <<'PY'
+          import re
+          from pathlib import Path
+
+          gradle_file = Path("yogurt") / "build.gradle.kts"
+          content = gradle_file.read_text(encoding="utf-8")
+          match = re.search(r'version\s*=\s*"([^"]+)"', content)
+          if not match:
+              raise SystemExit("Cannot find version in yogurt/build.gradle.kts")
+          print(match.group(1))
+          PY
+          )"
+          short_hash="$(git rev-parse --short=7 HEAD)"
+          release_tag="v${version}+${short_hash}"
+          docker_version_tag="${version}-${short_hash}"
+          docker_sha_tag="sha-${short_hash}"
+          docker_image="ghcr.io/llonebot/yogurt-pmhq"
+
+          echo "release_version=${version}" >> "$GITHUB_OUTPUT"
+          echo "release_tag=${release_tag}" >> "$GITHUB_OUTPUT"
+          echo "release_name=${release_tag}" >> "$GITHUB_OUTPUT"
+          echo "docker_image=${docker_image}" >> "$GITHUB_OUTPUT"
+          echo "docker_version_tag=${docker_version_tag}" >> "$GITHUB_OUTPUT"
+          echo "docker_sha_tag=${docker_sha_tag}" >> "$GITHUB_OUTPUT"
+
   build-native:
+    needs: resolve-meta
     runs-on: ${{ matrix.runs-on }}
 
     strategy:
@@ -75,6 +122,7 @@ jobs:
           path: yogurt/build/bin/${{ matrix.target }}/releaseExecutable/**
 
   build-jvm:
+    needs: resolve-meta
     runs-on: ubuntu-latest
 
     env:
@@ -102,6 +150,7 @@ jobs:
 
   release-yogurt:
     needs:
+      - resolve-meta
       - build-native
       - build-jvm
     runs-on: ubuntu-latest
@@ -134,34 +183,59 @@ jobs:
             cp release-input/yogurt-jvm/yogurt-jvm-all.jar release-assets/yogurt-jvm-all.jar
           fi
 
-      - name: Resolve release metadata
-        id: release_meta
-        run: |
-          set -euo pipefail
-          version="$(python3 <<'PY'
-          import re
-          from pathlib import Path
-
-          gradle_file = Path("yogurt") / "build.gradle.kts"
-          content = gradle_file.read_text(encoding="utf-8")
-          match = re.search(r'version\s*=\s*"([^"]+)"', content)
-          if not match:
-              raise SystemExit("Cannot find version in yogurt/build.gradle.kts")
-          print(match.group(1))
-          PY
-          )"
-          short_hash="$(git rev-parse --short=7 HEAD)"
-          tag="v${version}+${short_hash}"
-          echo "release_version=${version}" >> "$GITHUB_OUTPUT"
-          echo "release_tag=${tag}" >> "$GITHUB_OUTPUT"
-          echo "release_name=${tag}" >> "$GITHUB_OUTPUT"
-
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.release_meta.outputs.release_tag }}
-          name: ${{ steps.release_meta.outputs.release_name }}
+          tag_name: ${{ needs.resolve-meta.outputs.release_tag }}
+          name: ${{ needs.resolve-meta.outputs.release_name }}
           generate_release_notes: false
           files: release-assets/*
           body: |
             Yogurt PMHQ build for commit `${{ github.sha }}`
+
+  publish-docker:
+    needs: resolve-meta
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: docker_meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ needs.resolve-meta.outputs.docker_image }}
+          tags: |
+            type=raw,value=latest
+            type=raw,value=${{ needs.resolve-meta.outputs.release_version }}
+            type=raw,value=${{ needs.resolve-meta.outputs.docker_version_tag }}
+            type=raw,value=${{ needs.resolve-meta.outputs.docker_sha_tag }}
+          labels: |
+            org.opencontainers.image.title=yogurt-pmhq
+            org.opencontainers.image.description=Yogurt PMHQ Docker image
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ needs.resolve-meta.outputs.release_tag }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.docker_meta.outputs.tags }}
+          labels: ${{ steps.docker_meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
