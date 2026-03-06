@@ -33,21 +33,7 @@ suspend fun Application.initializePC(): Bot {
             SessionStore.fromJson(it.readString())
         }
     } else SessionStore.empty()
-    val appInfo: AppInfo = when (config.protocol.version) {
-        "fetched" -> signProvider.getAppInfo()
-            ?: throw IllegalStateException("通过 Sign API 获取 AppInfo 失败，请检查地址是否正确并且支持获取 AppInfo 功能")
-
-        "custom" -> if (SystemFileSystem.exists(customAppInfoPath)) {
-            SystemFileSystem.source(customAppInfoPath).buffered().use {
-                AppInfo.fromJson(it.readString())
-            }
-        } else {
-            throw IllegalStateException("未在 $customAppInfoPath 下找到自定义 AppInfo 文件")
-        }
-
-        else -> bundledPCAppInfo["${config.protocol.os}/${config.protocol.version}"]
-            ?: throw IllegalStateException("未找到匹配的内置 AppInfo，请检查配置的 OS 和 Version 是否正确")
-    }
+    val appInfo: AppInfo = AppInfo.Bundled.Linux
     t.println("使用协议 ${appInfo.os} ${appInfo.currentVersion} (AppId: ${appInfo.subAppId})")
     val bot = Bot(
         appInfo = appInfo,

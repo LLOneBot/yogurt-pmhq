@@ -16,9 +16,7 @@ import org.ntqqrev.acidify.struct.*
  * @param preloadContacts 是否预加载好友和群信息以初始化内存缓存
  */
 suspend fun AbstractBot.online(preloadContacts: Boolean = false) {
-    client.sendOnlinePacket()
     isLoggedIn = true
-    logger.i { "发送上线包成功" }
     client.doPostOnlineLogic()
 
     eventCollectJob = launch {

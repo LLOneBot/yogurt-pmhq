@@ -42,18 +42,6 @@ object YogurtApp {
         port = config.httpConfig.port,
         host = config.httpConfig.host
     ) {
-        if (config.signApiUrl.isEmpty()) {
-            t.println(
-                TextColors.brightRed(
-                    """
-                        错误：你未配置 signApiUrl，这会导致 Yogurt 无法启动。
-                        请前往设置中配置一个可用的签名 API 地址。
-                    """.trimIndent()
-                )
-            )
-            exitProcess(1)
-        }
-
         t.println(
             """
                 .--------------------------------------.
@@ -96,9 +84,9 @@ object YogurtApp {
 
         when {
             isPC -> initializePC()
-            isAndroid -> initializeAndroid()
+            isAndroid -> throw IllegalStateException("PMHQ 模式仅支持 PC 协议，Android 协议已禁用")
             else -> throw IllegalStateException(
-                "不支持的协议 ${config.protocol.os}，当前仅支持 Windows、Mac、Linux、AndroidPhone、AndroidPad"
+                "不支持的协议 ${config.protocol.os}，当前仅支持 Windows、Mac、Linux"
             )
         }
 

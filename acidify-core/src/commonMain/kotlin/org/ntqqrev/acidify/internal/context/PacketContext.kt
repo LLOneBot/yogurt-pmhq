@@ -1,75 +1,62 @@
 package org.ntqqrev.acidify.internal.context
 
-import dev.karmakrafts.kompress.Inflater
-import io.ktor.network.selector.*
-import io.ktor.network.sockets.*
-import io.ktor.utils.io.*
+import io.ktor.client.*
+import io.ktor.client.plugins.websocket.*
+import io.ktor.websocket.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.io.Buffer
 import kotlinx.io.IOException
-import kotlinx.io.readByteArray
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromJsonElement
 import org.ntqqrev.acidify.common.SsoResponse
 import org.ntqqrev.acidify.internal.AbstractClient
-import org.ntqqrev.acidify.internal.KuromeClient
 import org.ntqqrev.acidify.internal.LagrangeClient
-import org.ntqqrev.acidify.internal.crypto.tea.TEA
-import org.ntqqrev.acidify.internal.proto.system.SsoReservedFields
+import org.ntqqrev.acidify.internal.json.pmhq.*
 import org.ntqqrev.acidify.internal.proto.system.SsoSecureInfo
 import org.ntqqrev.acidify.internal.service.EncryptType
 import org.ntqqrev.acidify.internal.service.RequestType
-import org.ntqqrev.acidify.internal.service.system.AndroidHeartbeat
 import org.ntqqrev.acidify.internal.service.system.Heartbeat
-import org.ntqqrev.acidify.internal.util.*
 
 internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
-    private val host = "msfwifi.3g.qq.com"
-    private val port = 8080
-    private val selectorManager = SelectorManager(client.coroutineContext)
-    private var currentSocket: Socket? = null
-    private lateinit var input: ByteReadChannel
-    private lateinit var output: ByteWriteChannel
-    private val pending = mutableMapOf<Int, CompletableDeferred<SsoResponse>>()
+    private companion object {
+        const val pmhqWsUrl = "ws://localhost:13000/ws" // TODO: make this configurable
+    }
+
+    private val pmhqJson = Json {
+        encodeDefaults = true
+        ignoreUnknownKeys = true
+        explicitNulls = false
+    }
+    private val websocketClient = HttpClient {
+        install(WebSockets)
+    }
+    private var currentSession: DefaultClientWebSocketSession? = null
+    private var connectionReady = CompletableDeferred<Unit>()
+    private val pendingPackets = mutableMapOf<String, CompletableDeferred<SsoResponse>>()
+    private val pendingCalls = mutableMapOf<String, CompletableDeferred<PmhqCallResponse>>()
     private val sendPacketMutex = Mutex()
     private val mapQueryMutex = Mutex()
     private var startConnectLoopJob: Job? = null
     private var heartbeatJob: Job? = null
+    private var closeRequested = false
 
     init {
+        require(client is LagrangeClient) { "PMHQ transport only supports PCQQ clients" }
         startConnectLoopJob = client.launch {
             startConnectLoop()
         }
     }
 
     override suspend fun postOnline() {
-        heartbeatJob = when (client) {
-            is LagrangeClient -> client.launch {
-                while (isActive) {
-                    try {
-                        client.callService(Heartbeat)
-                    } catch (e: Exception) {
-                        logger.w(e) { "心跳包发送失败" }
-                    }
-                    delay(270_000L) // 4.5min
+        heartbeatJob = client.launch {
+            while (isActive) {
+                try {
+                    client.callService(Heartbeat)
+                } catch (e: Exception) {
+                    logger.w(e) { "心跳包发送失败" }
                 }
-            }
-
-            is KuromeClient -> client.launch {
-                var aliveCount = 0
-                while (isActive) {
-                    aliveCount++
-                    try {
-                        client.callService(AndroidHeartbeat)
-                        if (aliveCount % 27 == 0) {
-                            client.callService(Heartbeat) // 270s per Heartbeat
-                            aliveCount = 0
-                        }
-                    } catch (e: Exception) {
-                        logger.w(e) { "心跳包发送失败" }
-                    }
-                    delay(10_000L) // 10s
-                }
+                delay(270_000L) // 4.5min
             }
         }
     }
@@ -79,62 +66,104 @@ internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
         heartbeatJob = null
     }
 
+    suspend fun fetchSelfInfo(timeoutMillis: Long = 10_000L): PmhqSelfInfo {
+        connectionReady.await()
+        val echo = "getSelfInfo-${client.ssoSequence++}"
+        val deferred = CompletableDeferred<PmhqCallResponse>()
+        mapQueryMutex.withLock { pendingCalls[echo] = deferred }
+        try {
+            sendFrame(
+                PmhqCallFrame(
+                    data = PmhqCallData(
+                        echo = echo,
+                        func = "getSelfInfo",
+                    )
+                )
+            )
+            val response = withTimeout(timeoutMillis) { deferred.await() }
+            if (response.code != 0) {
+                throw IOException("PMHQ call getSelfInfo failed: ${response.message}")
+            }
+            val result = response.result
+                ?: throw IOException("PMHQ call getSelfInfo returned an empty result")
+            val selfInfo = pmhqJson.decodeFromJsonElement<PmhqSelfInfoPayload>(result)
+            return PmhqSelfInfo(
+                uin = selfInfo.uin.toLongOrNull()
+                    ?: throw IOException("PMHQ call getSelfInfo returned an invalid uin"),
+                uid = selfInfo.uid,
+            )
+        } catch (e: Exception) {
+            mapQueryMutex.withLock { pendingCalls.remove(echo) }
+            throw e
+        }
+    }
+
     suspend fun startConnectLoop() {
-        connect()
-        client.launch {
-            var isReconnect = false
-            while (isActive) {
-                try {
-                    if (isReconnect) {
-                        client.launch(CoroutineExceptionHandler { _, t ->
-                            logger.e(t) { "发送上线包时出现错误" }
-                        }) {
-                            client.sendOnlinePacket()
-                            logger.i { "上线包发送成功，重连完成" }
-                            client.doPostOnlineLogic()
-                        }
-                    }
-                    handleReceiveLoop()
-                } catch (_: ClosedByteChannelException) {
-                    break
-                } catch (_: kotlinx.coroutines.CancellationException) {
-                    break
-                } catch (e: Exception) {
-                    logger.e(e) { "接收数据包时出现错误，5s 后尝试重新连接" }
-                    cleanupPendingRequests(e)
-                    client.doPreOfflineLogic()
-                    closeConnection()
-                    delay(5000)
-                    isReconnect = true
-                    connect()
+        var isReconnect = false
+        var shouldRestoreOnlineContexts = false
+        while (currentCoroutineContext().isActive) {
+            try {
+                closeRequested = false
+                connect()
+                connectionReady.complete(Unit)
+                if (isReconnect && shouldRestoreOnlineContexts) {
+                    client.doPostOnlineLogic()
+                    logger.i { "PMHQ 连接已恢复" }
+                    shouldRestoreOnlineContexts = false
                 }
+                handleReceiveLoop()
+                break
+            } catch (_: CancellationException) {
+                break
+            } catch (e: Exception) {
+                if (closeRequested) break
+                logger.e(e) {
+                    if (isReconnect || connectionReady.isCompleted) {
+                        "PMHQ 连接出现错误，5s 后尝试重新连接"
+                    } else {
+                        "连接 PMHQ 失败，5s 后尝试重连"
+                    }
+                }
+                cleanupPendingRequests(e)
+                if (isReconnect || connectionReady.isCompleted) {
+                    shouldRestoreOnlineContexts = heartbeatJob != null
+                    client.doPreOfflineLogic()
+                }
+                closeConnectionInternal()
+                connectionReady = CompletableDeferred()
+                delay(5000)
+                isReconnect = true
             }
         }
     }
 
     suspend fun closeConnection() {
+        closeRequested = true
+        startConnectLoopJob?.cancel()
+        cleanupPendingRequests(IOException("PMHQ connection closed by client"))
+        closeConnectionInternal()
+    }
+
+    private suspend fun closeConnectionInternal() {
         try {
-            input.cancel()
-            output.flushAndClose()
-            currentSocket?.close()
-            currentSocket = null
-            logger.d { "已关闭连接" }
+            currentSession?.close()
+            currentSession = null
+            logger.d { "已关闭 PMHQ 连接" }
         } catch (e: Exception) {
-            logger.w(e) { "关闭连接时出现错误" }
+            logger.w(e) { "关闭 PMHQ 连接时出现错误" }
         }
     }
 
     private suspend fun connect() {
-        val newSocket = aSocket(selectorManager).tcp().connect(host, port) {
-            keepAlive = true
+        val newSession = websocketClient.webSocketSession(urlString = pmhqWsUrl)
+        if (!newSession.isActive) {
+            throw IOException("PMHQ websocket session is not active")
         }
-        currentSocket = newSocket
-        input = newSocket.openReadChannel()
-        output = newSocket.openWriteChannel(autoFlush = true)
-        logger.d { "已连接到 $host:$port" }
+        currentSession = newSession
+        logger.d { "已连接到 PMHQ websocket: $pmhqWsUrl" }
     }
 
-    suspend inline fun sendPacket(
+    suspend fun sendPacket(
         command: String,
         sequence: Int,
         payload: ByteArray,
@@ -144,218 +173,106 @@ internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
         encryptType: EncryptType = EncryptType.WithD2Key,
         ssoSecureInfo: SsoSecureInfo? = null,
     ): SsoResponse {
-        startConnectLoopJob?.join()
-        val packet = when (requestType) {
-            RequestType.D2Auth -> client.buildProtocol12(
-                command = command,
-                payload = payload,
-                sequence = sequence,
-                encryptType = encryptType,
-                ssoReservedMsgType = ssoReservedMsgType,
-                ssoSecureInfo = ssoSecureInfo,
-            )
-
-            RequestType.Simple -> client.buildProtocol13(
-                command = command,
-                payload = payload,
-                sequence = sequence,
-                encryptType = encryptType,
-                ssoReservedMsgType = ssoReservedMsgType,
-                ssoSecureInfo = ssoSecureInfo,
-            )
-        }
+        connectionReady.await()
+        val echo = sequence.toString()
         val deferred = CompletableDeferred<SsoResponse>()
-        mapQueryMutex.withLock { pending[sequence] = deferred }
-        sendPacketMutex.withLock { output.writePacket(packet) }
-        logger.v { "[seq=$sequence] -> $command" }
-        return try {
-            withTimeout(timeoutMillis) { deferred.await() }
+        mapQueryMutex.withLock { pendingPackets[echo] = deferred }
+        try {
+            sendFrame(
+                PmhqSendFrame(
+                    data = PmhqSendData(
+                        echo = echo,
+                        cmd = command,
+                        pb = payload.toHexString(),
+                    )
+                )
+            )
+            logger.v { "[seq=$sequence] -> $command" }
+            return withTimeout(timeoutMillis) { deferred.await() }
         } catch (e: Exception) {
-            mapQueryMutex.withLock { pending.remove(sequence) }
+            mapQueryMutex.withLock { pendingPackets.remove(echo) }
             throw e
         }
     }
 
+    private suspend inline fun <reified T> sendFrame(payload: T) {
+        val session = currentSession ?: throw IOException("PMHQ websocket is not connected")
+        sendPacketMutex.withLock {
+            session.send(Frame.Text(pmhqJson.encodeToString(payload)))
+        }
+    }
+
     private suspend fun handleReceiveLoop() {
-        while (currentCoroutineContext().isActive) {
-            val header = input.readByteArray(4)
-            val packetLength = header.readUInt32BE(0)
-            val packet = input.readByteArray(packetLength.toInt() - 4)
-            val sso = client.parseSsoFrame(packet)
-            logger.v { "[seq=${sso.sequence}] <- ${sso.command} (code=${sso.retCode})" }
-            mapQueryMutex.withLock { pending.remove(sso.sequence) }.also {
-                if (it != null) {
-                    it.complete(sso)
-                } else {
-                    client.pushChannel.send(sso)
-                }
+        val session = currentSession ?: throw IOException("PMHQ websocket is not connected")
+        for (frame in session.incoming) {
+            when (frame) {
+                is Frame.Text -> handleIncomingText(frame.readText())
+                is Frame.Close -> throw IOException("PMHQ websocket closed")
+
+                else -> {}
             }
         }
+        throw IOException("PMHQ websocket closed")
+    }
+
+    private suspend fun handleIncomingText(text: String) {
+        val packet = pmhqJson.decodeFromString<PmhqIncomingFrame>(text)
+        when (packet.type) {
+            "recv" -> handleRecv(packet)
+            "call" -> handleCall(packet)
+            else -> logger.v { "收到未知的 PMHQ 消息：$text" }
+        }
+    }
+
+    private suspend fun handleRecv(packet: PmhqIncomingFrame) {
+        val data = packet.data?.let { pmhqJson.decodeFromJsonElement<PmhqRecvData>(it) } ?: return
+        val echo = data.echo
+        val command = data.cmd
+        val payload = data.pb.hexToByteArray()
+        val retCode = packet.code
+        val message = packet.message
+        val sequence = echo?.toIntOrNull() ?: 0
+        val sso = if (retCode == 0) {
+            SsoResponse(retCode, command, payload, sequence)
+        } else {
+            SsoResponse(retCode, command, payload, sequence, message)
+        }
+        logger.v { "[seq=${sso.sequence}] <- ${sso.command} (code=${sso.retCode})" }
+        val pending = if (echo != null) {
+            mapQueryMutex.withLock { pendingPackets.remove(echo) }
+        } else {
+            null
+        }
+        if (pending != null) {
+            pending.complete(sso)
+        } else {
+            client.pushChannel.send(sso)
+        }
+    }
+
+    private suspend fun handleCall(packet: PmhqIncomingFrame) {
+        val data = packet.data?.let { pmhqJson.decodeFromJsonElement<PmhqCallResultData>(it) } ?: return
+        val echo = data.echo ?: return
+        val response = PmhqCallResponse(
+            code = packet.code,
+            message = packet.message,
+            result = data.result,
+        )
+        mapQueryMutex.withLock { pendingCalls.remove(echo) }?.complete(response)
     }
 
     private suspend fun cleanupPendingRequests(error: Throwable) {
-        val pendingCount = mapQueryMutex.withLock { pending.size }
-        if (pendingCount > 0) {
-            logger.w { "清理 $pendingCount 个待处理的请求" }
-            mapQueryMutex.withLock {
-                pending.forEach { (_, deferred) ->
-                    deferred.completeExceptionally(
-                        IOException("连接已断开: ${error.message}", error)
-                    )
-                }
-                pending.clear()
+        mapQueryMutex.withLock {
+            val packetCount = pendingPackets.size
+            val callCount = pendingCalls.size
+            if (packetCount + callCount > 0) {
+                logger.w { "清理 ${packetCount + callCount} 个待处理的 PMHQ 请求" }
             }
-        }
-    }
-
-    // Packet building
-
-    private val buildSsoFixedBytes = byteArrayOf(
-        0x02, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00,
-    )
-
-    private fun AbstractClient.buildSsoReserved(
-        msgType: Int,
-        secureInfo: SsoSecureInfo?
-    ) = when (this) {
-        is LagrangeClient -> SsoReservedFields(
-            trace = generateTrace(),
-            uid = uid,
-            msgType = msgType,
-            secureInfo = secureInfo,
-        )
-
-        is KuromeClient -> SsoReservedFields(
-            trace = generateTrace(),
-            uid = uid,
-            msgType = msgType,
-            secureInfo = secureInfo,
-            ntCoreVersion = 100,
-        )
-    }.pbEncode()
-
-    private fun AbstractClient.buildProtocol12(
-        command: String,
-        payload: ByteArray,
-        sequence: Int,
-        encryptType: EncryptType,
-        ssoReservedMsgType: Int,
-        ssoSecureInfo: SsoSecureInfo?,
-    ): Buffer = Buffer().apply {
-        barrier(Prefix.UINT_32 or Prefix.INCLUDE_PREFIX) {
-            writeInt(12)
-            writeByte(encryptType.underlying)
-            writeBytes(
-                when (encryptType) {
-                    EncryptType.WithD2Key -> d2
-                    else -> ByteArray(0)
-                },
-                Prefix.UINT_32 or Prefix.INCLUDE_PREFIX
-            )
-            writeByte(0) // unknown
-            writeString(uin.toString(), Prefix.UINT_32 or Prefix.INCLUDE_PREFIX)
-            val sso = Buffer().apply {
-                barrier(Prefix.UINT_32 or Prefix.INCLUDE_PREFIX) {
-                    writeInt(sequence)
-                    writeInt(subAppId)
-                    writeInt(2052)  // locale id
-                    writeBytes(buildSsoFixedBytes)
-                    writeBytes(a2, Prefix.UINT_32 or Prefix.INCLUDE_PREFIX)
-                    writeString(command, Prefix.UINT_32 or Prefix.INCLUDE_PREFIX)
-                    writeBytes(ByteArray(0), Prefix.UINT_32 or Prefix.INCLUDE_PREFIX) // unknown
-                    writeString(guid.toHexString(), Prefix.UINT_32 or Prefix.INCLUDE_PREFIX)
-                    writeBytes(ByteArray(0), Prefix.UINT_32 or Prefix.INCLUDE_PREFIX) // unknown
-                    writeString(currentVersion, Prefix.UINT_16 or Prefix.INCLUDE_PREFIX)
-                    writeBytes(
-                        buildSsoReserved(
-                            msgType = ssoReservedMsgType,
-                            secureInfo = ssoSecureInfo,
-                        ),
-                        Prefix.UINT_32 or Prefix.INCLUDE_PREFIX
-                    )
-                }
-                writeBytes(payload, Prefix.UINT_32 or Prefix.INCLUDE_PREFIX)
-            }
-            when (encryptType) {
-                EncryptType.None -> transferFrom(sso)
-                EncryptType.WithD2Key -> writeBytes(TEA.encrypt(sso.readByteArray(), d2Key))
-                EncryptType.WithEmptyKey -> writeBytes(TEA.encrypt(sso.readByteArray(), ByteArray(16)))
-            }
-        }
-    }
-
-    private fun AbstractClient.buildProtocol13(
-        command: String,
-        payload: ByteArray,
-        sequence: Int,
-        encryptType: EncryptType,
-        ssoReservedMsgType: Int,
-        ssoSecureInfo: SsoSecureInfo?,
-    ): Buffer = Buffer().apply {
-        barrier(Prefix.UINT_32 or Prefix.INCLUDE_PREFIX) {
-            writeInt(13)
-            writeByte(encryptType.underlying)
-            writeInt(sequence)
-            writeByte(0)
-            writeString(uin.toString(), Prefix.UINT_32 or Prefix.INCLUDE_PREFIX)
-            val sso = Buffer().apply {
-                barrier(Prefix.UINT_32 or Prefix.INCLUDE_PREFIX) {
-                    writeString(command, Prefix.UINT_32 or Prefix.INCLUDE_PREFIX)
-                    writeInt(4) // uint 32 with prefix, ByteArray(0)
-                    writeBytes(
-                        buildSsoReserved(
-                            msgType = ssoReservedMsgType,
-                            secureInfo = ssoSecureInfo,
-                        ),
-                        Prefix.UINT_32 or Prefix.INCLUDE_PREFIX
-                    )
-                }
-                writeBytes(payload, Prefix.UINT_32 or Prefix.INCLUDE_PREFIX)
-            }
-            when (encryptType) {
-                EncryptType.None -> transferFrom(sso)
-                EncryptType.WithD2Key -> writeBytes(TEA.encrypt(sso.readByteArray(), d2Key))
-                EncryptType.WithEmptyKey -> writeBytes(TEA.encrypt(sso.readByteArray(), ByteArray(16)))
-            }
-        }
-    }
-
-    internal fun AbstractClient.parseSsoFrame(packet: ByteArray): SsoResponse {
-        val rawReader = packet.reader()
-        val protocol = rawReader.readUInt()
-        val authFlag = rawReader.readByte()
-        rawReader.readByte() // dummy
-        rawReader.readPrefixedString(Prefix.UINT_32 or Prefix.INCLUDE_PREFIX) // uin
-        if (protocol != 12u && protocol != 13u) throw Exception("Unrecognized protocol: $protocol")
-        val encrypted = rawReader.readByteArray()
-        val decrypted = when (authFlag) {
-            EncryptType.None.underlying -> encrypted
-            EncryptType.WithD2Key.underlying -> TEA.decrypt(encrypted, d2Key)
-            EncryptType.WithEmptyKey.underlying -> TEA.decrypt(encrypted, ByteArray(16))
-            else -> throw Exception("Unrecognized auth flag: $authFlag")
-        }
-
-        val reader = decrypted.reader()
-        reader.readUInt() // headLen
-        val sequence = reader.readUInt()
-        val retCode = reader.readInt()
-        val extra = reader.readPrefixedString(Prefix.UINT_32 or Prefix.INCLUDE_PREFIX)
-        val command = reader.readPrefixedString(Prefix.UINT_32 or Prefix.INCLUDE_PREFIX)
-        reader.readPrefixedBytes(Prefix.UINT_32 or Prefix.INCLUDE_PREFIX) // messageCookie
-        val isCompressed = reader.readInt() == 1
-        reader.readPrefixedBytes(Prefix.UINT_32) // reservedField
-        var payload = reader.readPrefixedBytes(Prefix.UINT_32 or Prefix.INCLUDE_PREFIX)
-
-        if (isCompressed) {
-            payload = Inflater.inflate(payload, raw = false)
-        }
-
-        return if (retCode == 0) {
-            SsoResponse(retCode, command, payload, sequence.toInt())
-        } else {
-            SsoResponse(retCode, command, payload, sequence.toInt(), extra)
+            val wrapped = IOException("PMHQ connection disconnected: ${error.message}", error)
+            pendingPackets.values.forEach { it.completeExceptionally(wrapped) }
+            pendingCalls.values.forEach { it.completeExceptionally(wrapped) }
+            pendingPackets.clear()
+            pendingCalls.clear()
         }
     }
 }
