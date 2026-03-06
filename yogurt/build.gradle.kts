@@ -66,6 +66,8 @@ val gitHashProvider: Provider<String> = providers.exec {
     commandLine("git", "rev-parse", "HEAD")
 }.standardOutput.asText.map { it.trim() }
 
+val gitShortHashProvider: Provider<String> = gitHashProvider.map { it.substring(0, 7) }
+
 val coreLibGitHashProvider: Provider<String> = providers.exec {
     commandLine("git", "-C", project(":acidify-core").projectDir.absolutePath, "rev-parse", "HEAD")
 }.standardOutput.asText.map { it.trim() }
@@ -75,16 +77,12 @@ val buildTimeProvider: Provider<String> = providers.provider {
         .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z"))
 }
 
-val runNumberProvider: Provider<String> = providers.provider {
-    System.getenv("GITHUB_RUN_NUMBER") ?: "local"
-}
-
 buildkonfig {
     packageName = "org.ntqqrev.yogurt"
 
     defaultConfigs {
         buildConfigField(FieldSpec.Type.STRING, "name", "Yogurt")
-        buildConfigField(FieldSpec.Type.STRING, "version", "${project.version}-dev.${runNumberProvider.get()}")
+        buildConfigField(FieldSpec.Type.STRING, "version", "${project.version}+${gitShortHashProvider.get()}")
         buildConfigField(
             FieldSpec.Type.STRING,
             "coreVersion",

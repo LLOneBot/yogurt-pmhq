@@ -1,0 +1,167 @@
+name: Build Yogurt PMHQ
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-native:
+    runs-on: ${{ matrix.runs-on }}
+
+    strategy:
+      matrix:
+        include:
+          - runs-on: ubuntu-latest
+            target: mingwX64
+            gradle-target: MingwX64
+            platform: windows-x64
+
+          - runs-on: macos-latest
+            target: macosX64
+            gradle-target: MacosX64
+            platform: macos-x64
+
+          - runs-on: macos-latest
+            target: macosArm64
+            gradle-target: MacosArm64
+            platform: macos-arm64
+
+          - runs-on: ubuntu-latest
+            target: linuxX64
+            gradle-target: LinuxX64
+            platform: linux-x64
+
+          - runs-on: ubuntu-latest
+            target: linuxArm64
+            gradle-target: LinuxArm64
+            platform: linux-arm64
+
+    env:
+      GITHUB_ACTIONS_BUILD_TARGET: ${{ matrix.target }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Cache konan
+        uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: ${{ runner.os }}-konan-${{ matrix.target }}-${{ hashFiles('**/gradle/libs.versions.toml') }}
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrappers
+          key: ${{ runner.os }}-gradleNativeBuild-${{ matrix.target }}-${{ hashFiles('**/gradle/libs.versions.toml') }}
+
+      - name: Setup JDK 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 25
+
+      - name: Build Yogurt for ${{ matrix.target }}
+        run: ./gradlew :yogurt:linkReleaseExecutable${{ matrix.gradle-target }} --no-daemon
+
+      - name: Upload ${{ matrix.target }} executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: yogurt-${{ matrix.platform }}
+          path: yogurt/build/bin/${{ matrix.target }}/releaseExecutable/**
+
+  build-jvm:
+    runs-on: ubuntu-latest
+
+    env:
+      GITHUB_ACTIONS_BUILD_TARGET: jvm
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup JDK 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 25
+          cache: gradle
+
+      - name: Build yogurt-jvm fat jar
+        run: ./gradlew :yogurt-jvm:shadowJar --no-daemon
+
+      - name: Upload fat jar artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: yogurt-jvm
+          path: yogurt-jvm/build/libs/yogurt-jvm-all.jar
+
+  release-yogurt:
+    needs:
+      - build-native
+      - build-jvm
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-input
+
+      - name: Prepare release assets
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets
+
+          for dir in release-input/yogurt-*; do
+            if [ -d "$dir" ]; then
+              base="$(basename "$dir")"
+              if [ "$base" = "yogurt-jvm" ]; then
+                continue
+              fi
+              (cd "$dir" && zip -r "../../release-assets/${base}.zip" .)
+            fi
+          done
+
+          if [ -f release-input/yogurt-jvm/yogurt-jvm-all.jar ]; then
+            cp release-input/yogurt-jvm/yogurt-jvm-all.jar release-assets/yogurt-jvm-all.jar
+          fi
+
+      - name: Resolve release metadata
+        id: release_meta
+        run: |
+          set -euo pipefail
+          version="$(python3 <<'PY'
+          import re
+          from pathlib import Path
+
+          gradle_file = Path("yogurt") / "build.gradle.kts"
+          content = gradle_file.read_text(encoding="utf-8")
+          match = re.search(r'version\s*=\s*"([^"]+)"', content)
+          if not match:
+              raise SystemExit("Cannot find version in yogurt/build.gradle.kts")
+          print(match.group(1))
+          PY
+          )"
+          short_hash="$(git rev-parse --short=7 HEAD)"
+          tag="v${version}+${short_hash}"
+          echo "release_version=${version}" >> "$GITHUB_OUTPUT"
+          echo "release_tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "release_name=${tag}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_meta.outputs.release_tag }}
+          name: ${{ steps.release_meta.outputs.release_name }}
+          generate_release_notes: false
+          files: release-assets/*
+          body: |
+            Yogurt PMHQ build for commit `${{ github.sha }}`
