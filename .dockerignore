@@ -4,6 +4,11 @@
 .idea
 .kotlin
 **/build
+!yogurt/build/
+!yogurt/build/bin/
+!yogurt/build/bin/linuxX64/
+!yogurt/build/bin/linuxX64/releaseExecutable/
+!yogurt/build/bin/linuxX64/releaseExecutable/yogurt.kexe
 **/node_modules
 acidify-core-js
 acidify-docs
