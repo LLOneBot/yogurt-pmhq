@@ -8,17 +8,100 @@
 
 ## 使用
 
-运行前请先启动 PMHQ，并确保它的 WebSocket 服务可以访问。默认情况下，Yogurt 会连接 `ws://localhost:13000/ws`。随后启动 Yogurt；如果当前工作目录下还没有 `config.json`，程序会先生成一份默认配置文件，等待你修改后再继续。
+### Docker 部署（推荐）
 
-填写了 `quickLoginUin` 时，Yogurt 启动后会先检查当前 PMHQ 是否已经登录；如果已经登录且账号正好是这个 QQ 号，就会直接进入初始化；如果已经登录但账号不是这个 QQ 号，则会直接报错，避免误用错误账号；如果当前尚未登录，则会检查 PMHQ 的快速登录列表，在列表中找到该 QQ 号时优先尝试快速登录，失败后再回落到二维码登录。不填写 `quickLoginUin` 时，Yogurt 会直接按照当前 PMHQ 状态继续，必要时进入二维码登录。登录成功后，Yogurt 会继续执行初始化，并开始对外提供 Milky 接口。
+由于 Yogurt-PMHQ 需要一个启动的 PMHQ 实例，因此推荐使用 Docker Compose 来将 PMHQ 与本项目一同部署。下面是一个示例 `docker-compose.yml`，展示了如何将 PMHQ 和 Yogurt 放在同一个网络里，并通过环境变量配置它们的行为：
 
-Yogurt 启动并登录完成后，HTTP API 的地址是 `http://<host>:<port>/api`，事件接口的地址是 `http://<host>:<port>/event`。如果设置了 `accessToken`，调用方需要使用同一个令牌完成认证；在 HTTP 场景下，通常使用 `Authorization: Bearer <token>` 请求头即可。
+```yaml
+services:
+  pmhq:
+    image: linyuchen/pmhq:latest
+    container_name: pmhq
+    privileged: true
+    environment:
+      - ENABLE_HEADLESS=true
+      - AUTO_LOGIN_QQ=
+    volumes:
+      - qq_volume:/root/.config/QQ
+    networks:
+      - app_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:13000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  yogurt:
+    image: ghcr.io/llonebot/yogurt-pmhq:latest
+    container_name: yogurt-pmhq
+    platform: linux/amd64
+    environment:
+      - PMHQ_HOST=pmhq
+      - PMHQ_PORT=13000
+      - YOGURT_HOST=0.0.0.0
+      - YOGURT_PORT=3000
+      - YOGURT_ACCESS_TOKEN=change-me
+      - HTTP_CORS_ORIGINS=
+      - WEBHOOK_URLS=
+      - WEBHOOK_ACCESS_TOKEN=
+      - QUICK_LOGIN_UIN=
+      - PRELOAD_CONTACTS=false
+      - REPORT_SELF_MESSAGE=true
+      - TRANSFORM_INCOMING_MFACE_TO_IMAGE=false
+      - SKIP_SECURITY_CHECK=true
+      - ANSI_LEVEL=ANSI256
+      - CORE_LOG_LEVEL=DEBUG
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./data:/app/data
+    ports:
+      - "3000:3000"
+    depends_on:
+      pmhq:
+        condition: service_healthy
+    networks:
+      - app_network
+    restart: unless-stopped
+
+volumes:
+  qq_volume:
+
+networks:
+  app_network:
+    driver: bridge
+```
+
+Yogurt 支持三种登录方式：当前登录状态继续、快速登录和二维码登录，主要通过 `QUICK_LOGIN_UIN` 这一项来控制。Yogurt 启动后会先检查当前 PMHQ 是否已经登录。登录成功后，Yogurt 会继续执行初始化，并开始对外提供 Milky 接口。
+
+
+- 填写了 `QUICK_LOGIN_UIN` 时：
+  - 如果已经登录且账号与填写的 QQ 号相符，就会直接进入初始化；
+  - 如果已经登录但账号与填写的 QQ 号不符，则会直接报错，避免误用账号；
+  - 如果当前尚未登录，则会检查 PMHQ 的快速登录列表：
+    - 在列表中找到该 QQ 号时，优先尝试快速登录；
+    - 在列表中未找到该 QQ 号或快速登录失败后，回落到二维码登录。
+- 不填写 `QUICK_LOGIN_UIN` 时：
+  - 如果已经登录，则直接进入初始化；
+  - 如果尚未登录，则进入二维码登录。
+
+PMHQ 的 QQ 配置目录会挂载到独立卷 `qq_volume`。Yogurt 的运行目录会挂载到 `./data`，启动时自动生成 `config.json` 和脚本目录，适合长期保留登录状态与本地数据。镜像内部运行的是 `linuxX64` 的 Kotlin/Native 可执行文件。
+
+Yogurt 容器额外写入了 `host.docker.internal:host-gateway`，因此 webhook 或其他回调服务如果运行在宿主机上，也可以直接从容器内访问。如果你确实需要从宿主机直接访问 PMHQ，再自行给 `pmhq` 服务补端口映射即可。
+
+其他配置选项的含义请参见下文的“配置”部分。
+
+### 手动部署
+
+运行前请先启动 PMHQ，并确保它的 WebSocket 服务可以访问。默认情况下，Yogurt 会连接 `ws://localhost:13000/ws`。随后启动 Yogurt；如果当前工作目录下还没有 `config.json`，程序会先生成一份默认配置文件，等待你修改后再继续。Yogurt 启动后的工作流程如上所示。
 
 ## 配置
 
 当前版本面向 PC 协议使用，内置固定使用 `Linux` 协议信息，不需要再额外配置 PC 协议版本，也不需要签名服务。最常见的配置如下：
 
-```jsonc
+```json5
 {
   "signApiUrl": "", // 留空即可
   "pmhqUrl": "ws://localhost:13000/ws",
@@ -86,18 +169,6 @@ Yogurt 启动并登录完成后，HTTP API 的地址是 `http://<host>:<port>/ap
 ### 日志配置
 
 见 [Yogurt 文档的“日志配置”部分](https://acidify.ntqqrev.org/yogurt/configuration#%E6%97%A5%E5%BF%97%E9%85%8D%E7%BD%AE)。
-
-## Docker 部署
-
-如果准备把 Yogurt 和 PMHQ 一起部署，仓库里已经提供了一套可以直接使用的 Docker 文件，位于 `docker/` 目录。`docker/docker-compose.yml` 默认使用 `ghcr.io/llonebot/yogurt-pmhq:latest`，并将 `pmhq` 和 `yogurt` 放在同一个网络里。Yogurt 会直接通过容器名 `pmhq` 连接 `ws://pmhq:13000/ws`，不需要再额外处理容器间通信。
-
-PMHQ 的 QQ 配置目录会挂载到独立卷 `qq_volume`。Yogurt 的运行目录会挂载到 `./data`，启动时自动生成 `config.json` 和脚本目录，适合长期保留登录状态与本地数据。镜像内部运行的是 `linuxX64` 的 Kotlin/Native 可执行文件，而不是 JVM fat jar，因此运行时占用会更小一些。
-
-首次使用时，在仓库根目录执行 `docker compose -f docker/docker-compose.yml up -d` 即可。启动后，Yogurt 会根据容器环境变量自动写出配置文件。最常用的几项已经放在 compose 文件里，包括 `YOGURT_PORT`、`YOGURT_ACCESS_TOKEN`、`QUICK_LOGIN_UIN`、`PRELOAD_CONTACTS`、`REPORT_SELF_MESSAGE` 和 `SKIP_SECURITY_CHECK`。
-
-如果需要跨域访问，可以填写 `HTTP_CORS_ORIGINS`，多个来源使用逗号分隔。如果需要事件推送，可以填写 `WEBHOOK_URLS`，同样使用逗号分隔，并在需要时通过 `WEBHOOK_ACCESS_TOKEN` 配置推送鉴权。默认情况下，HTTP 接口会映射到宿主机的 `3000` 端口，PMHQ 不对外暴露端口，只在 compose 内部网络中提供服务。
-
-Yogurt 容器额外写入了 `host.docker.internal:host-gateway`，因此 webhook 或其他回调服务如果运行在宿主机上，也可以直接从容器内访问。如果你确实需要从宿主机直接访问 PMHQ，再自行给 `pmhq` 服务补端口映射即可。
 
 ## 支持平台
 
