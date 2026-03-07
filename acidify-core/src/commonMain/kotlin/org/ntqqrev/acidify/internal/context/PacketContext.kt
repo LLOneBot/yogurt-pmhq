@@ -38,6 +38,7 @@ internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
     private val pendingCalls = mutableMapOf<String, CompletableDeferred<PmhqCallResponse>>()
     private val sendPacketMutex = Mutex()
     private val mapQueryMutex = Mutex()
+    private val connectLoopMutex = Mutex()
     private val eventListenerMutex = Mutex()
     private val eventListeners = mutableMapOf<String, suspend (String, PmhqEventData) -> Unit>()
     private var startConnectLoopJob: Job? = null
@@ -46,9 +47,6 @@ internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
 
     init {
         require(client is LagrangeClient) { "PMHQ transport only supports PCQQ clients" }
-        startConnectLoopJob = client.launch {
-            startConnectLoop()
-        }
     }
 
     override suspend fun postOnline() {
@@ -84,6 +82,7 @@ internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
         args: List<JsonElement> = emptyList(),
         timeoutMillis: Long = 10_000L,
     ): JsonElement? {
+        ensureConnectionStarted()
         connectionReady.await()
         val echo = "$function-${client.ssoSequence++}"
         val deferred = CompletableDeferred<PmhqCallResponse>()
@@ -194,6 +193,7 @@ internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
         encryptType: EncryptType = EncryptType.WithD2Key,
         ssoSecureInfo: SsoSecureInfo? = null,
     ): SsoResponse {
+        ensureConnectionStarted()
         connectionReady.await()
         val echo = sequence.toString()
         val deferred = CompletableDeferred<SsoResponse>()
@@ -220,6 +220,18 @@ internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
         val session = currentSession ?: throw IOException("PMHQ websocket is not connected")
         sendPacketMutex.withLock {
             session.send(Frame.Text(pmhqJson.encodeToString(payload)))
+        }
+    }
+
+    private suspend fun ensureConnectionStarted() {
+        if (startConnectLoopJob?.isActive == true) return
+        connectLoopMutex.withLock {
+            if (startConnectLoopJob?.isActive == true) return
+            closeRequested = false
+            connectionReady = CompletableDeferred()
+            startConnectLoopJob = client.launch {
+                startConnectLoop()
+            }
         }
     }
 
