@@ -99,6 +99,10 @@ Yogurt 容器额外写入了 `host.docker.internal:host-gateway`，因此 webhoo
 
 ## 配置
 
+> [!important]
+> 
+> 通过 Docker 部署的用户不要手动修改 `config.json`，请直接通过环境变量来配置。手动修改的结果在 Docker 容器重启后会被覆盖。
+
 当前版本面向 PC 协议使用，内置固定使用 `Linux` 协议信息，不需要再额外配置 PC 协议版本，也不需要签名服务。最常见的配置如下：
 
 ```json5
