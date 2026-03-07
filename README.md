@@ -20,6 +20,7 @@ services:
     privileged: true
     environment:
       - ENABLE_HEADLESS=true
+      - RUST_LOG=error # Suppress PMHQ log to make Yogurt log visible
     volumes:
       - qq_volume:/root/.config/QQ
     networks:
