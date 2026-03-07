@@ -50,6 +50,7 @@ internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
     }
 
     override suspend fun postOnline() {
+        /*
         heartbeatJob = client.launch {
             while (isActive) {
                 try {
@@ -60,6 +61,7 @@ internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
                 delay(270_000L) // 4.5min
             }
         }
+         */
     }
 
     override suspend fun preOffline() {
