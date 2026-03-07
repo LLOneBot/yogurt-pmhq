@@ -20,7 +20,6 @@ services:
     privileged: true
     environment:
       - ENABLE_HEADLESS=true
-      - AUTO_LOGIN_QQ=
     volumes:
       - qq_volume:/root/.config/QQ
     networks:
