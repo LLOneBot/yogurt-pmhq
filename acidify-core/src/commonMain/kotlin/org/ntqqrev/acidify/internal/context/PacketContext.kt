@@ -17,7 +17,6 @@ import org.ntqqrev.acidify.internal.json.pmhq.*
 import org.ntqqrev.acidify.internal.proto.system.SsoSecureInfo
 import org.ntqqrev.acidify.internal.service.EncryptType
 import org.ntqqrev.acidify.internal.service.RequestType
-import org.ntqqrev.acidify.internal.service.system.Heartbeat
 import org.ntqqrev.acidify.internal.util.ensureLagrange
 
 internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
@@ -50,23 +49,9 @@ internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
     }
 
     override suspend fun postOnline() {
-        /*
-        heartbeatJob = client.launch {
-            while (isActive) {
-                try {
-                    client.callService(Heartbeat)
-                } catch (e: Exception) {
-                    logger.w(e) { "心跳包发送失败" }
-                }
-                delay(270_000L) // 4.5min
-            }
-        }
-         */
     }
 
     override suspend fun preOffline() {
-        heartbeatJob?.cancel()
-        heartbeatJob = null
     }
 
     suspend fun addEventListener(listener: suspend (String, PmhqEventData) -> Unit): String {
