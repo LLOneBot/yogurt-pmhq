@@ -7,13 +7,16 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.io.IOException
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.decodeFromJsonElement
+import org.ntqqrev.acidify.common.PmhqCallResponse
 import org.ntqqrev.acidify.common.SsoResponse
 import org.ntqqrev.acidify.internal.AbstractClient
 import org.ntqqrev.acidify.internal.LagrangeClient
 import org.ntqqrev.acidify.internal.json.pmhq.*
+import org.ntqqrev.acidify.internal.pmhq.PmhqListener
+import org.ntqqrev.acidify.internal.pmhq.PmhqService
+import org.ntqqrev.acidify.internal.pmhq.pmhqJson
 import org.ntqqrev.acidify.internal.proto.system.SsoSecureInfo
 import org.ntqqrev.acidify.internal.service.EncryptType
 import org.ntqqrev.acidify.internal.service.RequestType
@@ -23,11 +26,6 @@ internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
     private val pmhqWsUrl: String
         get() = client.ensureLagrange().pmhqUrl
 
-    private val pmhqJson = Json {
-        encodeDefaults = true
-        ignoreUnknownKeys = true
-        explicitNulls = false
-    }
     private val websocketClient = HttpClient {
         install(WebSockets)
     }
@@ -39,7 +37,7 @@ internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
     private val mapQueryMutex = Mutex()
     private val connectLoopMutex = Mutex()
     private val eventListenerMutex = Mutex()
-    private val eventListeners = mutableMapOf<String, suspend (String, PmhqEventData) -> Unit>()
+    private val eventListeners = mutableMapOf<String, PmhqListener>()
     private var startConnectLoopJob: Job? = null
     private var heartbeatJob: Job? = null
     private var closeRequested = false
@@ -54,7 +52,7 @@ internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
     override suspend fun preOffline() {
     }
 
-    suspend fun addEventListener(listener: suspend (String, PmhqEventData) -> Unit): String {
+    suspend fun addEventListener(listener: PmhqListener): String {
         val listenerId = "pmhq-event-${client.ssoSequence++}"
         eventListenerMutex.withLock { eventListeners[listenerId] = listener }
         return listenerId
@@ -93,17 +91,18 @@ internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
         }
     }
 
-    suspend fun fetchSelfInfo(timeoutMillis: Long = 10_000L): PmhqSelfInfo {
-        val result = callFunction("getSelfInfo", timeoutMillis = timeoutMillis)
-            ?: throw IOException("PMHQ call getSelfInfo returned an empty result")
-        val selfInfo = pmhqJson.decodeFromJsonElement<PmhqSelfInfoPayload>(result)
-        return PmhqSelfInfo(
-            uin = selfInfo.uin.toLongOrNull() ?: 0L,
-            uid = selfInfo.uid,
-            online = selfInfo.online,
-            nick = selfInfo.nick,
+    suspend fun <T, R> callService(service: PmhqService<T, R>, payload: T, timeoutMillis: Long = 10_000L): R =
+        service.parse(
+            client,
+            callFunction(
+                function = service.func,
+                args = service.build(client, payload),
+                timeoutMillis = timeoutMillis,
+            )
         )
-    }
+
+    suspend fun <R> callService(service: PmhqService<Unit, R>, timeoutMillis: Long = 10_000L): R =
+        callService(service, Unit, timeoutMillis)
 
     suspend fun startConnectLoop() {
         var isReconnect = false
@@ -292,7 +291,7 @@ internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
         val listeners = eventListenerMutex.withLock { eventListeners.values.toList() }
         listeners.forEach { listener ->
             client.launch {
-                listener(packet.type, event)
+                listener.handle(packet.type, event)
             }
         }
     }

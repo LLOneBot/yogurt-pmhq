@@ -1,6 +1,6 @@
-package org.ntqqrev.acidify.internal.json.pmhq
+package org.ntqqrev.acidify.common
 
-internal class PmhqSelfInfo(
+class PmhqSelfInfo(
     val uin: Long,
     val uid: String,
     val online: Boolean = false,

@@ -1,9 +1,6 @@
 package org.ntqqrev.acidify
 
 import kotlinx.coroutines.delay
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.decodeFromJsonElement
 import org.ntqqrev.acidify.event.AndroidSessionStoreUpdatedEvent
 import org.ntqqrev.acidify.event.QRCodeGeneratedEvent
 import org.ntqqrev.acidify.event.QRCodeStateQueryEvent
@@ -12,24 +9,22 @@ import org.ntqqrev.acidify.exception.WtLoginException
 import org.ntqqrev.acidify.internal.crypto.pow.POW
 import org.ntqqrev.acidify.internal.crypto.tea.TEA
 import org.ntqqrev.acidify.internal.json.pmhq.PmhqLoginQrCodePayload
-import org.ntqqrev.acidify.internal.json.pmhq.PmhqQuickLoginListPayload
-import org.ntqqrev.acidify.internal.json.pmhq.PmhqQuickLoginResult
-import org.ntqqrev.acidify.internal.json.pmhq.PmhqSelfInfo
+import org.ntqqrev.acidify.common.PmhqSelfInfo
+import org.ntqqrev.acidify.internal.pmhq.system.GetQRCodePicture
+import org.ntqqrev.acidify.internal.pmhq.system.GetQuickLoginList
+import org.ntqqrev.acidify.internal.pmhq.system.GetSelfInfo
+import org.ntqqrev.acidify.internal.pmhq.listener.NodeIKernelLoginListener
+import org.ntqqrev.acidify.internal.pmhq.system.QuickLoginWithUin
 import org.ntqqrev.acidify.internal.proto.system.AndroidThirdPartyLoginResponse
 import org.ntqqrev.acidify.internal.service.system.WtLogin
 import org.ntqqrev.acidify.internal.util.*
 import org.ntqqrev.acidify.struct.QRCodeState
 import kotlin.io.encoding.Base64
 
-private val pmhqLoginJson = Json {
-    ignoreUnknownKeys = true
-    explicitNulls = false
-}
-
 private suspend fun Bot.awaitPmhqOnline(queryInterval: Long, maxAttempts: Int): PmhqSelfInfo? {
     repeat(maxAttempts) {
         delay(queryInterval)
-        val selfInfo = client.packetContext.fetchSelfInfo()
+        val selfInfo = client.packetContext.callService(GetSelfInfo)
         if (selfInfo.online) {
             return selfInfo
         }
@@ -61,45 +56,62 @@ suspend fun Bot.qrCodeLogin(queryInterval: Long = 3000L, preloadContacts: Boolea
     require(queryInterval >= 1000L) { "查询间隔不能小于 1000 毫秒" }
 
     var qrState = QRCodeState.UNKNOWN
-    val listenerId = client.packetContext.addEventListener { type, event ->
-        if (type != "nodeIKernelLoginListener") return@addEventListener
-        when (event.subType) {
-            "onQRCodeGetPicture" -> {
-                val payload = event.data?.let { pmhqLoginJson.decodeFromJsonElement<PmhqLoginQrCodePayload>(it) }
-                    ?: return@addEventListener
-                val base64 = payload.pngBase64QrcodeData.removePrefix("data:image/png;base64,")
-                qrState = QRCodeState.WAITING_FOR_SCAN
-                sharedEventFlow.emit(
-                    QRCodeGeneratedEvent(
-                        url = payload.qrcodeUrl,
-                        png = Base64.decode(base64),
-                    )
+    val listenerId = client.packetContext.addEventListener(object : NodeIKernelLoginListener() {
+        override suspend fun onQRCodeGetPicture(payload: PmhqLoginQrCodePayload) {
+            val base64 = payload.pngBase64QrcodeData.removePrefix("data:image/png;base64,")
+            qrState = QRCodeState.WAITING_FOR_SCAN
+            sharedEventFlow.emit(
+                QRCodeGeneratedEvent(
+                    url = payload.qrcodeUrl,
+                    png = Base64.decode(base64),
                 )
-            }
-
-            "onQRCodeLoginPollingStarted" -> qrState = QRCodeState.WAITING_FOR_SCAN
-            "onQRCodeSessionUserScaned" -> qrState = QRCodeState.WAITING_FOR_CONFIRMATION
-            "onQRCodeLoginSucceed", "onUserLoggedIn" -> qrState = QRCodeState.CONFIRMED
-            "onQRCodeSessionFailed" -> qrState = QRCodeState.CODE_EXPIRED
-            "onLoginFailed", "onQRCodeSessionQuickLoginFailed" -> qrState = QRCodeState.UNKNOWN
+            )
         }
-    }
+
+        override suspend fun onQRCodeLoginPollingStarted() {
+            qrState = QRCodeState.WAITING_FOR_SCAN
+        }
+
+        override suspend fun onQRCodeSessionUserScaned() {
+            qrState = QRCodeState.WAITING_FOR_CONFIRMATION
+        }
+
+        override suspend fun onQRCodeLoginSucceed() {
+            qrState = QRCodeState.CONFIRMED
+        }
+
+        override suspend fun onUserLoggedIn() {
+            qrState = QRCodeState.CONFIRMED
+        }
+
+        override suspend fun onQRCodeSessionFailed() {
+            qrState = QRCodeState.CODE_EXPIRED
+        }
+
+        override suspend fun onLoginFailed() {
+            qrState = QRCodeState.UNKNOWN
+        }
+
+        override suspend fun onQRCodeSessionQuickLoginFailed() {
+            qrState = QRCodeState.UNKNOWN
+        }
+    })
 
     try {
-        val selfInfo = client.packetContext.fetchSelfInfo()
+        val selfInfo = client.packetContext.callService(GetSelfInfo)
         if (selfInfo.online) {
             completePmhqLogin(selfInfo, preloadContacts)
             return
         }
 
         qrState = QRCodeState.WAITING_FOR_SCAN
-        client.packetContext.callFunction("loginService.getQRCodePicture")
+        client.packetContext.callService(GetQRCodePicture)
 
         while (true) {
             sharedEventFlow.emit(QRCodeStateQueryEvent(qrState))
             delay(queryInterval)
 
-            val polledSelfInfo = client.packetContext.fetchSelfInfo()
+            val polledSelfInfo = client.packetContext.callService(GetSelfInfo)
             if (polledSelfInfo.online) {
                 // qrState = QRCodeState.CONFIRMED
                 sharedEventFlow.emit(QRCodeStateQueryEvent(QRCodeState.CONFIRMED))
@@ -123,7 +135,7 @@ suspend fun Bot.login(
 ) {
     require(queryInterval >= 1000L) { "查询间隔不能小于 1000 毫秒" }
 
-    val currentSelfInfo = client.packetContext.fetchSelfInfo()
+    val currentSelfInfo = client.packetContext.callService(GetSelfInfo)
     if (currentSelfInfo.online) {
         if (quickLoginUin == null || currentSelfInfo.uin == quickLoginUin) {
             completePmhqLogin(currentSelfInfo, preloadContacts)
@@ -135,22 +147,14 @@ suspend fun Bot.login(
     }
 
     if (quickLoginUin != null) {
-        val quickLoginListResult = client.packetContext.callFunction("loginService.getLoginList")
-        val quickLoginList = quickLoginListResult?.let {
-            pmhqLoginJson.decodeFromJsonElement<PmhqQuickLoginListPayload>(it)
-        }
+        val quickLoginList = client.packetContext.callService(GetQuickLoginList)
         val canQuickLogin = quickLoginList
             ?.LocalLoginInfoList
             ?.any { it.uin == quickLoginUin.toString() && it.isQuickLogin && !it.isUserLogin }
             ?: false
 
         if (canQuickLogin) {
-            val quickLoginResult = client.packetContext.callFunction(
-                "loginService.quickLoginWithUin",
-                args = listOf(JsonPrimitive(quickLoginUin.toString())),
-            )?.let {
-                pmhqLoginJson.decodeFromJsonElement<PmhqQuickLoginResult>(it)
-            }
+            val quickLoginResult = client.packetContext.callService(QuickLoginWithUin, quickLoginUin)
 
             if (quickLoginResult?.result == "0") {
                 val quickLoggedInSelfInfo = awaitPmhqOnline(queryInterval, maxAttempts = 20)
