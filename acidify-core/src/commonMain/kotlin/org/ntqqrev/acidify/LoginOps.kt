@@ -55,7 +55,7 @@ private suspend fun Bot.completePmhqLogin(selfInfo: PmhqSelfInfo, preloadContact
 suspend fun Bot.qrCodeLogin(queryInterval: Long = 3000L, preloadContacts: Boolean = false) {
     require(queryInterval >= 1000L) { "查询间隔不能小于 1000 毫秒" }
 
-    var qrState = QRCodeState.UNKNOWN
+    var qrState: QRCodeState
     val listenerId = client.packetContext.addEventListener(object : NodeIKernelLoginListener() {
         override suspend fun onQRCodeGetPicture(payload: PmhqLoginQrCodePayload) {
             val base64 = payload.pngBase64QrcodeData.removePrefix("data:image/png;base64,")
@@ -113,8 +113,8 @@ suspend fun Bot.qrCodeLogin(queryInterval: Long = 3000L, preloadContacts: Boolea
 
             val polledSelfInfo = client.packetContext.callService(GetSelfInfo)
             if (polledSelfInfo.online) {
-                // qrState = QRCodeState.CONFIRMED
-                sharedEventFlow.emit(QRCodeStateQueryEvent(QRCodeState.CONFIRMED))
+                qrState = QRCodeState.CONFIRMED
+                sharedEventFlow.emit(QRCodeStateQueryEvent(qrState))
                 completePmhqLogin(polledSelfInfo, preloadContacts)
                 return
             }
@@ -138,11 +138,12 @@ suspend fun Bot.login(
     val currentSelfInfo = client.packetContext.callService(GetSelfInfo)
     if (currentSelfInfo.online) {
         if (quickLoginUin == null || currentSelfInfo.uin == quickLoginUin) {
+            logger.d { "当前 QQ 实例已登录账号 ${currentSelfInfo.uin}" }
             completePmhqLogin(currentSelfInfo, preloadContacts)
             return
         }
         throw IllegalStateException(
-            "PMHQ 当前已登录账号 ${currentSelfInfo.uin}，与要求的 quickLoginUin=$quickLoginUin 不匹配"
+            "当前 QQ 实例已登录账号 ${currentSelfInfo.uin}，与要求的 uin $quickLoginUin 不匹配"
         )
     }
 
@@ -154,6 +155,7 @@ suspend fun Bot.login(
             ?: false
 
         if (canQuickLogin) {
+            logger.d { "尝试快速登录 $quickLoginUin" }
             val quickLoginResult = client.packetContext.callService(QuickLoginWithUin, quickLoginUin)
 
             if (quickLoginResult?.result == "0") {
@@ -161,13 +163,15 @@ suspend fun Bot.login(
                 if (quickLoggedInSelfInfo != null) {
                     if (quickLoggedInSelfInfo.uin != quickLoginUin) {
                         throw IllegalStateException(
-                            "快速登录后 PMHQ 返回了账号 ${quickLoggedInSelfInfo.uin}，与要求的 quickLoginUin=$quickLoginUin 不匹配"
+                            "快速登录后 PMHQ 返回了 uin ${quickLoggedInSelfInfo.uin}，与要求的 uin $quickLoginUin 不匹配"
                         )
                     }
                     completePmhqLogin(quickLoggedInSelfInfo, preloadContacts)
                     return
                 }
             }
+        } else {
+            logger.w { "找不到 $quickLoginUin 的快速登录信息，将进行二维码登录" }
         }
     }
 
