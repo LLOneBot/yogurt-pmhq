@@ -20,6 +20,7 @@ import org.ntqqrev.acidify.internal.pmhq.pmhqJson
 import org.ntqqrev.acidify.internal.proto.system.SsoSecureInfo
 import org.ntqqrev.acidify.internal.service.EncryptType
 import org.ntqqrev.acidify.internal.service.RequestType
+import org.ntqqrev.acidify.internal.service.system.Heartbeat
 import org.ntqqrev.acidify.internal.util.ensureLagrange
 
 internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
@@ -47,6 +48,7 @@ internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
     }
 
     override suspend fun postOnline() {
+        client.callService(Heartbeat)
     }
 
     override suspend fun preOffline() {
