@@ -96,8 +96,7 @@ internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
                         )
                     )
                 )
-            }
-                .body<PmhqIncomingFrame>()
+            }.body<PmhqIncomingFrame>()
         }
         if (responseFrame.type != "call") {
             throw IOException("PMHQ HTTP call $function returned unexpected frame type: ${responseFrame.type}")

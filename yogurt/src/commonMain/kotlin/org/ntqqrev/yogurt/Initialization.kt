@@ -3,6 +3,7 @@ package org.ntqqrev.yogurt
 import com.github.ajalt.mordant.rendering.TextColors
 import io.ktor.server.application.*
 import io.ktor.server.plugins.di.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.io.buffered
@@ -135,10 +136,13 @@ suspend fun Application.initializeAndroid(): AndroidBot {
 
 suspend fun Application.botLogin() {
     when (val bot = dependencies.resolve<AbstractBot>()) {
-        is Bot -> bot.login(
-            preloadContacts = config.preloadContacts,
-            quickLoginUin = config.quickLoginUin,
-        )
+        is Bot -> {
+            delay(1000L) // todo: inspect this
+            bot.login(
+                preloadContacts = config.preloadContacts,
+                quickLoginUin = config.quickLoginUin,
+            )
+        }
         is AndroidBot -> {
             fun onRequireCaptchaTicket(captchaUrl: String): String {
                 val queryParams = captchaUrl.split("?")[1].replace("uin=0", "uin=${bot.uin}")
