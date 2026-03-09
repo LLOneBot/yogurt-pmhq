@@ -84,6 +84,7 @@ internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
                     )
                 )
             )
+            logger.v { "[echo=$echo] -> call $function" }
             val response = withTimeout(timeoutMillis) { deferred.await() }
             if (response.code != 0) throw IOException("PMHQ call $function failed: ${response.message}")
             return response.result
