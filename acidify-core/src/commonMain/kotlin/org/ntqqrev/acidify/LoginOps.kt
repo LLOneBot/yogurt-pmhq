@@ -25,6 +25,7 @@ private suspend fun Bot.awaitPmhqOnline(queryInterval: Long, maxAttempts: Int): 
     repeat(maxAttempts) {
         delay(queryInterval)
         val selfInfo = client.packetContext.callService(GetSelfInfo)
+        logger.d { "第 ${it + 1}/$maxAttempts 次查询登录状态，结果：${selfInfo.online}" }
         if (selfInfo.online) {
             return selfInfo
         }
@@ -55,72 +56,17 @@ private suspend fun Bot.completePmhqLogin(selfInfo: PmhqSelfInfo, preloadContact
 suspend fun Bot.qrCodeLogin(queryInterval: Long = 3000L, preloadContacts: Boolean = false) {
     require(queryInterval >= 1000L) { "查询间隔不能小于 1000 毫秒" }
 
-    var qrState: QRCodeState
-    val listenerId = client.packetContext.addEventListener(object : NodeIKernelLoginListener() {
-        override suspend fun onQRCodeGetPicture(payload: PmhqLoginQrCodePayload) {
-            val base64 = payload.pngBase64QrcodeData.removePrefix("data:image/png;base64,")
-            qrState = QRCodeState.WAITING_FOR_SCAN
-            sharedEventFlow.emit(
-                QRCodeGeneratedEvent(
-                    url = payload.qrcodeUrl,
-                    png = Base64.decode(base64),
-                )
-            )
-        }
-
-        override suspend fun onQRCodeLoginPollingStarted() {
-            qrState = QRCodeState.WAITING_FOR_SCAN
-        }
-
-        override suspend fun onQRCodeSessionUserScaned() {
-            qrState = QRCodeState.WAITING_FOR_CONFIRMATION
-        }
-
-        override suspend fun onQRCodeLoginSucceed() {
-            qrState = QRCodeState.CONFIRMED
-        }
-
-        override suspend fun onUserLoggedIn() {
-            qrState = QRCodeState.CONFIRMED
-        }
-
-        override suspend fun onQRCodeSessionFailed() {
-            qrState = QRCodeState.CODE_EXPIRED
-        }
-
-        override suspend fun onLoginFailed() {
-            qrState = QRCodeState.UNKNOWN
-        }
-
-        override suspend fun onQRCodeSessionQuickLoginFailed() {
-            qrState = QRCodeState.UNKNOWN
-        }
-    })
-
-    try {
-        val selfInfo = client.packetContext.callService(GetSelfInfo)
-        if (selfInfo.online) {
-            completePmhqLogin(selfInfo, preloadContacts)
-            return
-        }
-
-        qrState = QRCodeState.WAITING_FOR_SCAN
-        client.packetContext.callService(GetQRCodePicture)
-
-        while (true) {
-            sharedEventFlow.emit(QRCodeStateQueryEvent(qrState))
-            delay(queryInterval)
-
-            val polledSelfInfo = client.packetContext.callService(GetSelfInfo)
-            if (polledSelfInfo.online) {
-                qrState = QRCodeState.CONFIRMED
-                sharedEventFlow.emit(QRCodeStateQueryEvent(qrState))
-                completePmhqLogin(polledSelfInfo, preloadContacts)
-                return
-            }
-        }
-    } finally {
-        client.packetContext.removeEventListener(listenerId)
+    val selfInfo = client.packetContext.callService(GetSelfInfo)
+    if (selfInfo.online) {
+        completePmhqLogin(selfInfo, preloadContacts)
+        return
+    }
+    client.packetContext.callService(GetQRCodePicture)
+    val polledSelfInfo = awaitPmhqOnline(queryInterval, maxAttempts = 300)
+    if (polledSelfInfo != null) {
+        completePmhqLogin(polledSelfInfo, preloadContacts)
+    } else {
+        throw IllegalStateException("二维码登录超时，用户可能未扫码或未确认登录")
     }
 }
 
@@ -159,7 +105,7 @@ suspend fun Bot.login(
             val quickLoginResult = client.packetContext.callService(QuickLoginWithUin, quickLoginUin)
 
             if (quickLoginResult?.result == "0") {
-                val quickLoggedInSelfInfo = awaitPmhqOnline(queryInterval, maxAttempts = 20)
+                val quickLoggedInSelfInfo = awaitPmhqOnline(queryInterval, maxAttempts = 300)
                 if (quickLoggedInSelfInfo != null) {
                     if (quickLoggedInSelfInfo.uin != quickLoginUin) {
                         throw IllegalStateException(
