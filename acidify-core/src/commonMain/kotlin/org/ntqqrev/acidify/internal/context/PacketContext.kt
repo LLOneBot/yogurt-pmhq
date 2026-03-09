@@ -1,7 +1,12 @@
 package org.ntqqrev.acidify.internal.context
 
 import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.websocket.*
+import io.ktor.client.request.*
+import io.ktor.http.*
+import io.ktor.serialization.kotlinx.json.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
@@ -26,14 +31,24 @@ import org.ntqqrev.acidify.internal.util.ensureLagrange
 internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
     private val pmhqWsUrl: String
         get() = client.ensureLagrange().pmhqUrl
+    private val pmhqHttpUrl: String
+        get() = pmhqWsUrl
+            .replaceFirst("ws://", "http://")
+            .replaceFirst("wss://", "https://")
+            .removeSuffix("/ws")
+            .let { if (it.endsWith('/')) it else "$it/" }
 
     private val websocketClient = HttpClient {
         install(WebSockets)
     }
+    private val callHttpClient = HttpClient {
+        install(ContentNegotiation) {
+            json(pmhqJson)
+        }
+    }
     private var currentSession: DefaultClientWebSocketSession? = null
     private var connectionReady = CompletableDeferred<Unit>()
     private val pendingPackets = mutableMapOf<String, CompletableDeferred<SsoResponse>>()
-    private val pendingCalls = mutableMapOf<String, CompletableDeferred<PmhqCallResponse>>()
     private val sendPacketMutex = Mutex()
     private val mapQueryMutex = Mutex()
     private val connectLoopMutex = Mutex()
@@ -69,29 +84,33 @@ internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
         args: List<JsonElement> = emptyList(),
         timeoutMillis: Long = 10_000L,
     ): JsonElement? {
-        ensureConnectionStarted()
-        connectionReady.await()
-        val echo = "$function-${client.ssoSequence++}"
-        val deferred = CompletableDeferred<PmhqCallResponse>()
-        mapQueryMutex.withLock { pendingCalls[echo] = deferred }
-        try {
-            sendFrame(
-                PmhqCallFrame(
-                    data = PmhqCallData(
-                        echo = echo,
-                        func = function,
-                        args = args,
+        logger.v { "[func=$function] -> HTTP call" }
+        val responseFrame = withTimeout(timeoutMillis) {
+            callHttpClient.post(pmhqHttpUrl) {
+                contentType(ContentType.Application.Json)
+                setBody(
+                    PmhqCallFrame(
+                        data = PmhqCallData(
+                            func = function,
+                            args = args,
+                        )
                     )
                 )
-            )
-            logger.v { "[echo=$echo] -> call $function" }
-            val response = withTimeout(timeoutMillis) { deferred.await() }
-            if (response.code != 0) throw IOException("PMHQ call $function failed: ${response.message}")
-            return response.result
-        } catch (e: Exception) {
-            mapQueryMutex.withLock { pendingCalls.remove(echo) }
-            throw e
+            }
+                .body<PmhqIncomingFrame>()
         }
+        if (responseFrame.type != "call") {
+            throw IOException("PMHQ HTTP call $function returned unexpected frame type: ${responseFrame.type}")
+        }
+        val responseData = responseFrame.data?.let { pmhqJson.decodeFromJsonElement<PmhqCallResultData>(it) }
+        val response = PmhqCallResponse(
+            code = responseFrame.code,
+            message = responseFrame.message,
+            result = responseData?.result,
+        )
+        logger.v { "[func=$function] <- HTTP call (code=${response.code})" }
+        if (response.code != 0) throw IOException("PMHQ call $function failed: ${response.message}")
+        return response.result
     }
 
     suspend fun <T, R> callService(service: PmhqService<T, R>, payload: T, timeoutMillis: Long = 10_000L): R =
@@ -241,7 +260,7 @@ internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
         val packet = pmhqJson.decodeFromString<PmhqIncomingFrame>(text)
         when (packet.type) {
             "recv" -> handleRecv(packet)
-            "call" -> handleCall(packet)
+            "call" -> logger.v { "收到未关联的 PMHQ call 响应：$text" }
             else -> handleEvent(packet, text)
         }
     }
@@ -272,17 +291,6 @@ internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
         }
     }
 
-    private suspend fun handleCall(packet: PmhqIncomingFrame) {
-        val data = packet.data?.let { pmhqJson.decodeFromJsonElement<PmhqCallResultData>(it) } ?: return
-        val echo = data.echo ?: return
-        val response = PmhqCallResponse(
-            code = packet.code,
-            message = packet.message,
-            result = data.result,
-        )
-        mapQueryMutex.withLock { pendingCalls.remove(echo) }?.complete(response)
-    }
-
     private suspend fun handleEvent(packet: PmhqIncomingFrame, rawText: String) {
         val event = packet.data?.let {
             runCatching { pmhqJson.decodeFromJsonElement<PmhqEventData>(it) }.getOrNull()
@@ -302,15 +310,12 @@ internal class PacketContext(client: AbstractClient) : AbstractContext(client) {
     private suspend fun cleanupPendingRequests(error: Throwable) {
         mapQueryMutex.withLock {
             val packetCount = pendingPackets.size
-            val callCount = pendingCalls.size
-            if (packetCount + callCount > 0) {
-                logger.w { "清理 ${packetCount + callCount} 个待处理的 PMHQ 请求" }
+            if (packetCount > 0) {
+                logger.w { "清理 $packetCount 个待处理的 PMHQ 请求" }
             }
             val wrapped = IOException("PMHQ connection disconnected: ${error.message}", error)
             pendingPackets.values.forEach { it.completeExceptionally(wrapped) }
-            pendingCalls.values.forEach { it.completeExceptionally(wrapped) }
             pendingPackets.clear()
-            pendingCalls.clear()
         }
     }
 }
