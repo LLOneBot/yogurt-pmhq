@@ -127,7 +127,7 @@ buildkonfig {
     packageName = "org.ntqqrev.yogurt"
 
     defaultConfigs {
-        buildConfigField(FieldSpec.Type.STRING, "name", "Yogurt")
+        buildConfigField(FieldSpec.Type.STRING, "name", "Yogurt-PMHQ")
         buildConfigField(FieldSpec.Type.STRING, "version", "${project.version}+${gitShortHashProvider.get()}")
         buildConfigField(
             FieldSpec.Type.STRING,
