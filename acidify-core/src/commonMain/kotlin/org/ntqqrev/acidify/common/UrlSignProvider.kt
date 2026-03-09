@@ -1,14 +1,12 @@
 package org.ntqqrev.acidify.common
 
 import io.ktor.client.*
-import io.ktor.client.call.*
 import io.ktor.client.engine.*
-import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import org.ntqqrev.acidify.exception.UrlSignException
 
 /**
@@ -18,11 +16,11 @@ import org.ntqqrev.acidify.exception.UrlSignException
  */
 class UrlSignProvider(val url: String, val httpProxy: String? = null) : SignProvider {
     private val signUrl = Url(url)
+    private val jsonModule = Json {
+        ignoreUnknownKeys = true
+    }
 
     private val client = HttpClient {
-        install(ContentNegotiation) {
-            json()
-        }
         engine {
             if (!httpProxy.isNullOrEmpty()) {
                 proxy = ProxyBuilder.http(httpProxy)
@@ -39,7 +37,7 @@ class UrlSignProvider(val url: String, val httpProxy: String? = null) : SignProv
         if (resp.status != HttpStatusCode.OK) {
             throw UrlSignException(resp.status.description, resp.status.value)
         }
-        val value = resp.body<UrlSignResponse>().value
+        val value = jsonModule.decodeFromString<UrlSignResponse>(resp.bodyAsText()).value
         return SignResult(
             sign = value.sign.hexToByteArray(),
             token = value.token.hexToByteArray(),
