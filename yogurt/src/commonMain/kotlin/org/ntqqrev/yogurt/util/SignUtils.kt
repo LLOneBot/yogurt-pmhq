@@ -187,9 +187,9 @@ private data class AndroidUrlEnergyRequest(
 
 @Serializable
 private data class AndroidUrlSignResponse<T>(
-    val code: Int,
-    val msg: String,
-    val data: T?
+    val code: Int = 0,
+    val msg: String = "",
+    val data: T? = null,
 )
 
 @Serializable

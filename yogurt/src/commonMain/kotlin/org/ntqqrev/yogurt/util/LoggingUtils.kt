@@ -327,7 +327,11 @@ fun Application.configureEventLogging() = launch {
                 }
 
                 b.append(" ")
-                b.append(bot.faceDetailMap[it.faceId]?.qDes ?: it.faceId)
+                bot.faceDetailMap[it.faceId]?.let { detail ->
+                    b.append(detail.qDes)
+                    b.append(" ")
+                }
+                b.append("(#${it.faceId}, type=${it.type})")
 
                 logger.d { b.toString() }
             }

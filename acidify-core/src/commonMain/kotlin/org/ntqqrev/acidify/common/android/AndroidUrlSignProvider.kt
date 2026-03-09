@@ -177,7 +177,7 @@ private data class AndroidUrlDebugXwidRequest(
 private data class AndroidUrlSignResponse<T>(
     val code: Int = 0,
     val msg: String = "",
-    val data: T?
+    val data: T? = null,
 )
 
 @Serializable
