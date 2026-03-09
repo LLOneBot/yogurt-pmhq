@@ -1,6 +1,8 @@
 package org.ntqqrev.acidify
 
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import org.ntqqrev.acidify.event.AndroidSessionStoreUpdatedEvent
 import org.ntqqrev.acidify.event.QRCodeGeneratedEvent
 import org.ntqqrev.acidify.event.QRCodeStateQueryEvent
@@ -61,12 +63,27 @@ suspend fun Bot.qrCodeLogin(queryInterval: Long = 3000L, preloadContacts: Boolea
         completePmhqLogin(selfInfo, preloadContacts)
         return
     }
-    client.packetContext.callService(GetQRCodePicture)
-    val polledSelfInfo = awaitPmhqOnline(queryInterval, maxAttempts = 300)
-    if (polledSelfInfo != null) {
-        completePmhqLogin(polledSelfInfo, preloadContacts)
-    } else {
-        throw IllegalStateException("二维码登录超时，用户可能未扫码或未确认登录")
+    val listenerId = client.packetContext.addEventListener(object : NodeIKernelLoginListener() {
+        override suspend fun onQRCodeGetPicture(payload: PmhqLoginQrCodePayload) {
+            val base64 = payload.pngBase64QrcodeData.removePrefix("data:image/png;base64,")
+            sharedEventFlow.emit(
+                QRCodeGeneratedEvent(
+                    url = payload.qrcodeUrl,
+                    png = Base64.decode(base64),
+                )
+            )
+        }
+    })
+    try {
+        client.packetContext.callService(GetQRCodePicture)
+        val polledSelfInfo = awaitPmhqOnline(queryInterval, maxAttempts = 300)
+        if (polledSelfInfo != null) {
+            completePmhqLogin(polledSelfInfo, preloadContacts)
+        } else {
+            throw IllegalStateException("二维码登录超时，用户可能未扫码或未确认登录")
+        }
+    } finally {
+        client.packetContext.removeEventListener(listenerId)
     }
 }
 
@@ -102,19 +119,18 @@ suspend fun Bot.login(
 
         if (canQuickLogin) {
             logger.d { "尝试快速登录 $quickLoginUin" }
-            val quickLoginResult = client.packetContext.callService(QuickLoginWithUin, quickLoginUin)
-
-            if (quickLoginResult?.result == "0") {
-                val quickLoggedInSelfInfo = awaitPmhqOnline(queryInterval, maxAttempts = 300)
-                if (quickLoggedInSelfInfo != null) {
-                    if (quickLoggedInSelfInfo.uin != quickLoginUin) {
-                        throw IllegalStateException(
-                            "快速登录后 PMHQ 返回了 uin ${quickLoggedInSelfInfo.uin}，与要求的 uin $quickLoginUin 不匹配"
-                        )
-                    }
-                    completePmhqLogin(quickLoggedInSelfInfo, preloadContacts)
-                    return
+            launch {
+                client.packetContext.callService(QuickLoginWithUin, quickLoginUin)
+            }
+            val quickLoggedInSelfInfo = awaitPmhqOnline(queryInterval, maxAttempts = 300)
+            if (quickLoggedInSelfInfo != null) {
+                if (quickLoggedInSelfInfo.uin != quickLoginUin) {
+                    throw IllegalStateException(
+                        "快速登录后 PMHQ 返回了 uin ${quickLoggedInSelfInfo.uin}，与要求的 uin $quickLoginUin 不匹配"
+                    )
                 }
+                completePmhqLogin(quickLoggedInSelfInfo, preloadContacts)
+                return
             }
         } else {
             logger.w { "找不到 $quickLoginUin 的快速登录信息，将进行二维码登录" }
