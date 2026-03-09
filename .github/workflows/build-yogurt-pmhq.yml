@@ -1,6 +1,15 @@
 name: Build Yogurt PMHQ
 
 on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '.devin/**'
+      - 'kotlin-js-store/**'
+      - 'acidify-core-js/**'
+      - 'acidify-docs/**'
+      - '**.md'
   workflow_dispatch:
 
 permissions:
