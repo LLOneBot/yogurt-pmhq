@@ -10,6 +10,10 @@
 
 ### Docker 部署（推荐）
 
+> [!important]
+>
+> 在 macOS 上请使用 [OrbStack](https://orbstack.dev/) 而非 Docker Desktop。
+
 由于 Yogurt-PMHQ 需要一个启动的 PMHQ 实例，因此推荐使用 Docker Compose 来将 PMHQ 与本项目一同部署。下面是一个示例 `docker-compose.yml`，展示了如何将 PMHQ 和 Yogurt 放在同一个网络里，并通过环境变量配置它们的行为：
 
 ```yaml
